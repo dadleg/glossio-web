@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Dashboard</h1>
+        <div class="mb-3">
+            <a href="{{ url_for('main.new_project') }}" class="btn btn-primary">New Project</a>
+        </div>
+        
+        <h3>Recent Projects</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Filename</th>
+                    <th>Lang Pair</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in projects %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td>{{ p.filename }}</td>
+                    <td>{{ p.source_lang }} -> {{ p.target_lang }}</td>
+                    <td>{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('main.editor', project_id=p.id) }}" class="btn btn-sm btn-success">Open</a>
+                        <a href="{{ url_for('main.export_project', project_id=p.id) }}" class="btn btn-sm btn-info">Export</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

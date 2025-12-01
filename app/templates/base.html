@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glossio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { padding-top: 10px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .container-fluid { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Navbar Tweaks */
+        .navbar { padding-top: 0.25rem; padding-bottom: 0.25rem; min-height: 40px; }
+        .navbar-brand { font-weight: bold; font-size: 1.25rem; color: #0d6efd !important; }
+        
+        /* Layout */
+        .editor-container { display: flex; flex: 1; overflow: hidden; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 10px; }
+        
+        /* Sidebar (Left) */
+        .sidebar { width: 250px; overflow-y: auto; border-right: 1px solid #dee2e6; background: #f8f9fa; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 10px; border-bottom: 1px solid #dee2e6; font-weight: bold; background: #e9ecef; font-size: 0.9rem; }
+        .segment-list { flex: 1; overflow-y: auto; }
+        .segment-item { cursor: pointer; padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 0.85rem; line-height: 1.3; }
+        .segment-item:hover { background-color: #e9ecef; }
+        .segment-item.active { background-color: #e7f1ff; color: #000; border-left: 4px solid #0d6efd; }
+        .segment-item.translated { border-left: 4px solid #198754; }
+        .segment-item.translated.active { border-left: 4px solid #0d6efd; border-right: 4px solid #198754; }
+
+        /* Sidebar (Right) */
+        .right-sidebar { width: 280px; overflow-y: auto; border-left: 1px solid #dee2e6; background: #fff; display: flex; flex-direction: column; }
+        .right-sidebar-top { flex: 1; border-bottom: 1px solid #dee2e6; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; }
+        .right-sidebar-bottom { height: 40%; min-height: 200px; overflow-y: auto; padding: 10px; background: #f8f9fa; }
+
+        /* Main Editor */
+        .main-editor { flex: 1; display: flex; flex-direction: column; padding: 0; background: #fff; }
+        
+        /* Toolbar */
+        .editor-toolbar { padding: 5px 10px; border-bottom: 1px solid #dee2e6; background: #f8f9fa; display: flex; align-items: center; gap: 5px; }
+        .btn-icon { padding: 4px 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+        .btn-icon i { width: 16px; height: 16px; }
+
+        /* Work Area */
+        .work-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Context */
+        .context-panel { background: #fff3cd; border: 1px solid #ffeeba; padding: 8px; font-size: 0.85rem; border-radius: 4px; color: #856404; display: none; margin-bottom: 5px; }
+        .context-panel.show { display: block; }
+
+        .source-card { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; font-size: 1rem; min-height: 60px; }
+        .target-editor { width: 100%; min-height: 100px; resize: vertical; font-family: inherit; font-size: 1rem; }
+        .note-editor { width: 100%; height: 50px; resize: vertical; font-size: 0.9rem; }
+        .notes-container { display: none; margin-top: 10px; }
+        .notes-container.show { display: block; }
+
+        /* Styles for Right Sidebar items */
+        .info-section { margin-bottom: 15px; }
+        .info-label { font-weight: 600; color: #6c757d; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .info-card { background: #fff; border: 1px solid #dee2e6; padding: 8px; border-radius: 4px; font-size: 0.9rem; }
+        .info-card.warning { background: #fff3cd; border-color: #ffeeba; color: #856404; }
+        
+        /* Progress */
+        .progress-container { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+        .progress { width: 100px; height: 10px; }
+
+        /* Dark Mode Overrides */
+        [data-bs-theme="dark"] .sidebar, 
+        [data-bs-theme="dark"] .right-sidebar,
+        [data-bs-theme="dark"] .right-sidebar-bottom {
+            background-color: #212529 !important;
+            border-color: #495057 !important;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar-header,
+        [data-bs-theme="dark"] .info-header,
+        [data-bs-theme="dark"] .editor-toolbar {
+            background-color: #343a40 !important;
+            border-color: #495057 !important;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .source-card,
+        [data-bs-theme="dark"] .info-card {
+            background-color: #2b3035 !important;
+            border-color: #495057 !important;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .segment-item {
+            border-bottom-color: #495057 !important;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .segment-item:hover {
+            background-color: #343a40;
+        }
+        [data-bs-theme="dark"] .segment-item.active {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+        [data-bs-theme="dark"] .segment-item.translated {
+            border-left-color: #198754;
+        }
+        [data-bs-theme="dark"] .main-editor {
+            background-color: #212529;
+        }
+        [data-bs-theme="dark"] textarea {
+            background-color: #2b3035;
+            color: #fff;
+            border-color: #495057;
+        }
+        [data-bs-theme="dark"] .bg-light {
+            background-color: #2b3035 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between">
+            <a class="navbar-brand" href="/">
+                <i data-lucide="languages" style="vertical-align: middle; margin-right: 5px;"></i> Glossio
+            </a>
+            
+            <div class="d-flex align-items-center gap-3">
+                {% if current_user.is_authenticated %}
+                    <a class="nav-link" href="/">Dashboard</a>
+                    <button class="btn btn-sm btn-outline-secondary btn-icon" data-bs-toggle="modal" data-bs-target="#settingsModal" title="Settings">
+                        <i data-lucide="settings"></i>
+                    </button>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger btn-icon" title="Logout">
+                         <i data-lucide="log-out"></i>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+        
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-info">
+                {% for message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Settings</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+             <!-- Tabs -->
+             <ul class="nav nav-tabs mb-3" id="settingsTab" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-tab">General</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#resources-tab">Resources</button>
+                </li>
+             </ul>
+             
+             <div class="tab-content">
+                 <!-- General -->
+                 <div class="tab-pane fade show active" id="general-tab">
+                     <div class="mb-3">
+                         <label class="form-label">DeepL API Key</label>
+                         <input type="password" id="deepl-api-key-input" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx">
+                         <div class="form-text">Stored locally in your browser.</div>
+                     </div>
+                     <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                        <label class="form-check-label" for="theme-toggle">Dark Mode</label>
+                     </div>
+                     <div class="d-grid">
+                        <button type="button" class="btn btn-primary" onclick="saveSettings()">Save General Settings</button>
+                     </div>
+                 </div>
+                 
+                 <!-- Resources -->
+                 <div class="tab-pane fade" id="resources-tab">
+                     <div class="mb-3 border p-2 rounded">
+                         <label class="form-label">Upload Translation Memory (.json)</label>
+                         <form id="form-tm" action="{{ url_for('main.api_load_tm') }}" method="post" enctype="multipart/form-data">
+                             <div class="input-group">
+                                 <input type="file" name="file" class="form-control" required accept=".json">
+                                 <button type="button" class="btn btn-outline-secondary" onclick="uploadResource('tm')">Upload</button>
+                             </div>
+                         </form>
+                     </div>
+                     <div class="mb-3 border p-2 rounded">
+                         <label class="form-label">Upload Glossary (.csv)</label>
+                         <form id="form-glossary" action="{{ url_for('main.api_load_glossary') }}" method="post" enctype="multipart/form-data">
+                             <div class="input-group">
+                                 <input type="file" name="file" class="form-control" required accept=".csv">
+                                 <button type="button" class="btn btn-outline-secondary" onclick="uploadResource('glossary')">Upload</button>
+                             </div>
+                         </form>
+                     </div>
+                 </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        lucide.createIcons();
+
+        // Settings Logic
+        const apiKeyInput = document.getElementById('deepl-api-key-input');
+        
+        function loadSettings() {
+            const key = localStorage.getItem('glossio_deepl_key');
+            if(key) apiKeyInput.value = key;
+            
+            // Theme
+            const theme = localStorage.getItem('glossio_theme') || 'light';
+            document.body.setAttribute('data-bs-theme', theme);
+            document.getElementById('theme-toggle').checked = (theme === 'dark');
+        }
+        
+        function saveSettings() {
+            const key = apiKeyInput.value.trim();
+            if(key) {
+                localStorage.setItem('glossio_deepl_key', key);
+            } else {
+                localStorage.removeItem('glossio_deepl_key');
+            }
+            alert("Settings saved!");
+            const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+            modal.hide();
+        }
+        
+        function toggleTheme() {
+            const isDark = document.getElementById('theme-toggle').checked;
+            const theme = isDark ? 'dark' : 'light';
+            document.body.setAttribute('data-bs-theme', theme);
+            localStorage.setItem('glossio_theme', theme);
+        }
+        
+        function uploadResource(type) {
+            const form = document.getElementById(`form-${type}`);
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(e => alert("Upload failed: " + e));
+        }
+        
+        // Load on start
+        document.addEventListener('DOMContentLoaded', loadSettings);
+    </script>
+</body>
+</html>
