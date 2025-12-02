@@ -13,9 +13,9 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 @login_required
-def index():
-    projects = Project.query.filter_by(user_id=current_user.id).order_by(Project.created_at.desc()).all()
-    return render_template('index.html', projects=projects)
+def api_status():
+    return jsonify({"status": "API funca",
+                    "message": "Access API endpoints like /auth/login or /api/data"}), 200
 
 @bp.route('/project/new', methods=['GET', 'POST'])
 @login_required

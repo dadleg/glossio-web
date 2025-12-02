@@ -25,14 +25,14 @@ def setup():
         
         # Create Test User
         print("Creating test user...")
-        if not User.query.filter_by(email='test@example.com').first():
-            u = User(email='test@example.com')
-            u.set_password('password')
+        if not User.query.filter_by(email='damian@dadlegloria.org').first():
+            u = User(email='damian@dadlegloria.org')
+            u.set_password('Dami.0316')
             db.session.add(u)
             db.session.commit()
             print("SUCCESS: Test user created.")
-            print("Email: test@example.com")
-            print("Password: password")
+            print("Email: damian@dadlegloria.org")
+            print("Password: Dami.0316")
         else:
             print("Test user already exists.")
 
