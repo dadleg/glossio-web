@@ -20,8 +20,8 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix='/auth')
     
     with app.app_context():
-        db.create_all()
-
+#        db.create_all()
+        pass
     return app
 
 @login.user_loader
