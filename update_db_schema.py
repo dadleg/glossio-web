@@ -37,6 +37,16 @@ def update_schema():
                     print("Adding 'last_modified_at' column to 'segment' table...")
                     conn.execute(text("ALTER TABLE segment ADD COLUMN last_modified_at TIMESTAMP"))
                     conn.commit()
+
+                if 'locked_by_user_id' not in columns:
+                    print("Adding 'locked_by_user_id' column to 'segment' table...")
+                    conn.execute(text("ALTER TABLE segment ADD COLUMN locked_by_user_id INTEGER REFERENCES \"user\"(id)"))
+                    conn.commit()
+
+                if 'locked_at' not in columns:
+                    print("Adding 'locked_at' column to 'segment' table...")
+                    conn.execute(text("ALTER TABLE segment ADD COLUMN locked_at TIMESTAMP"))
+                    conn.commit()
                     
             print("Segment table check complete.")
         except Exception as e:
