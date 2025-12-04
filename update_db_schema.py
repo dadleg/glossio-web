@@ -4,7 +4,8 @@ from sqlalchemy import text, inspect
 def update_schema():
     app = create_app()
     with app.app_context():
-        print("Checking database schema...")
+        db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+        print(f"Checking database schema for: {db_uri.split('@')[-1] if '@' in db_uri else db_uri}...")
         inspector = inspect(db.engine)
         
         # 1. Check for 'name' column in 'user' table
