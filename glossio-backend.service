@@ -13,8 +13,8 @@ UMask=0007
 ExecStartPre=/bin/bash -c 'source /home/damiangfabio/glossio-web/venv/bin/activate'
 
 # URL CORREGIDA. Reemplazá los placeholders:
-Environment="DATABASE_URL=postgresql://dadleg:Dami.0316@127.0.0.1/catapp?sslmode=disable"
-Environment="SECRET_KEY=88ad3921f2a5a950cc817d5d637efc7a"
+Environment=DATABASE_URL=postgresql://dadleg:Dami.0316@127.0.0.1/catapp?sslmode=disable
+Environment=SECRET_KEY=88ad3921f2a5a950cc817d5d637efc7a
 
 # Comando para debug: binding a un puerto simple para ver el error en el shell
 # /home/damiangfabio/glossio-web/venv/bin/gunicorn --workers 1 --bind 0.0.0.0:8000 app:create_app
