@@ -55,6 +55,29 @@ class TextUtils:
         "1 pedro": "1 Peter", "2 pedro": "2 Peter",
         "1 juan": "1 John", "2 juan": "2 John", "3 juan": "3 John",
         "judas": "Jude", "apocalipsis": "Revelation",
+
+        # English Mappings (to handle casing issues like "Song Of Solomon")
+        "genesis": "Genesis", "exodus": "Exodus", "leviticus": "Leviticus", "numbers": "Numbers",
+        "deuteronomy": "Deuteronomy",
+        "joshua": "Joshua", "judges": "Judges", "ruth": "Ruth",
+        "1 samuel": "1 Samuel", "2 samuel": "2 Samuel", "1 kings": "1 Kings", "2 kings": "2 Kings",
+        "1 chronicles": "1 Chronicles", "2 chronicles": "2 Chronicles", "ezra": "Ezra", "nehemiah": "Nehemiah",
+        "esther": "Esther", "job": "Job", "psalms": "Psalms", "proverbs": "Proverbs", "ecclesiastes": "Ecclesiastes",
+        "song of solomon": "Song of Solomon", "isaiah": "Isaiah", "jeremiah": "Jeremiah", "lamentations": "Lamentations",
+        "ezekiel": "Ezekiel", "daniel": "Daniel", "hosea": "Hosea", "joel": "Joel", "amos": "Amos",
+        "obadiah": "Obadiah",
+        "jonah": "Jonah", "micah": "Micah", "nahum": "Nahum", "habakkuk": "Habakkuk", "zephaniah": "Zephaniah",
+        "haggai": "Haggai", "zechariah": "Zechariah", "malachi": "Malachi",
+        "matthew": "Matthew", "mark": "Mark", "luke": "Luke", "john": "John", "acts": "Acts",
+        "romans": "Romans",
+        "1 corinthians": "1 Corinthians", "2 corinthians": "2 Corinthians", "galatians": "Galatians",
+        "ephesians": "Ephesians", "philippians": "Philippians", "colossians": "Colossians",
+        "1 thessalonians": "1 Thessalonians", "2 thessalonians": "2 Thessalonians",
+        "1 timothy": "1 Timothy", "2 timothy": "2 Timothy", "titus": "Titus", "philemon": "Philemon",
+        "hebrews": "Hebrews", "james": "James",
+        "1 peter": "1 Peter", "2 peter": "2 Peter",
+        "1 john": "1 John", "2 john": "2 John", "3 john": "3 John",
+        "jude": "Jude", "revelation": "Revelation",
     }
     
     # Map for Bolls.life API (Integer IDs 1-66)
@@ -194,13 +217,17 @@ class TextUtils:
         # Regex to catch: (Abbr) (Ref)
         
         # Strip surrounding parens/braces first
-        clean_text = re.sub(r'^[\(\[\{]|[\)\]\}]$', '', text.strip()).strip()
+        # Improved: Remove [Tag] or (Tag) at the start, and any surrounding brackets
+        clean_text = re.sub(r'^\[.*?\]\s*', '', text.strip())
+        clean_text = re.sub(r'^\(.*? \)\s*', '', clean_text)
+        clean_text = re.sub(r'^[\(\[\{]|[\)\]\}]$', '', clean_text).strip()
         
         # Regex for Title + Ref (Ref must be digits.digits)
-        # Handles: "Title, p. 12.3", "Title 12.3", "(Title, 12.3)"
+        # Handles: "Title, p. 12.3", "Title 12.3", "(Title, 12.3)", "Title Vol. 2, p. 12.3"
         # Improved: Uses [A-Z] to find start of title to avoid matching long preceding text.
         # Captures: (Title) (Ref)
-        regex_full = r'([A-Z][a-zA-Z\s]+?)(?:,\s*|\s+)(?:p\.|pp\.|page|vol\.\s*\d+)?\s*(\d+(?:\:\d+)?\.\d+)'
+        # Updated to handle "Vol. 2, p. 214.1" correctly by allowing more flexible separators and content before the ref
+        regex_full = r'([A-Z].+?)(?:,\s*|\s+)(?:p\.|pp\.|page|vol\.\s*\d+(?:,\s*p\.)?)?\s*(\d+(?:\:\d+)?\.\d+)'
         match_full = re.search(regex_full, clean_text)
 
         # Try finding exact abbreviation first (most specific)

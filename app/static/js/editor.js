@@ -258,6 +258,13 @@ function nextSegment() {
     const idx = segments.indexOf(currentSegmentId);
     if (idx >= 0 && idx < segments.length - 1) {
         loadSegment(segments[idx + 1]);
+    } else {
+        // Fallback: Try to find next ID from DOM if segments array is out of sync
+        const currentEl = document.getElementById(`seg-item-${currentSegmentId}`);
+        if (currentEl && currentEl.nextElementSibling) {
+            const nextId = currentEl.nextElementSibling.id.replace('seg-item-', '');
+            if (nextId) loadSegment(parseInt(nextId));
+        }
     }
 }
 
@@ -348,6 +355,7 @@ document.addEventListener('keydown', function (e) {
     if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); nextSegment(); }
     if (e.ctrlKey && e.key === 'ArrowDown') { e.preventDefault(); nextSegment(); }
     if (e.ctrlKey && e.key === 'ArrowUp') { e.preventDefault(); prevSegment(); }
+    if (e.ctrlKey && (e.key === 'b' || e.key === 'B')) { e.preventDefault(); prevSegment(); } // Added Ctrl+B
     if (e.ctrlKey && e.key === 'i') { e.preventDefault(); copySource(); }
     if (e.ctrlKey && e.key === 't') { e.preventDefault(); useTM(); }
     if (e.ctrlKey && e.key === 'j') { e.preventDefault(); mergePrev(); }
