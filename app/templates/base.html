@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,35 +10,40 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
+
 <body class="{% block body_class %}{% endblock %}">
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between">
             <a class="navbar-brand" href="/">
                 <i data-lucide="languages" style="vertical-align: middle; margin-right: 5px;"></i> Glossio
             </a>
-            
+
             <div class="d-flex align-items-center gap-3">
                 {% if current_user.is_authenticated %}
-                    <a class="nav-link" href="/">Dashboard</a>
-                    <button class="btn btn-sm btn-outline-secondary btn-icon" data-bs-toggle="modal" data-bs-target="#settingsModal" title="Settings">
-                        <i data-lucide="settings"></i>
-                    </button>
-                    <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger btn-icon" title="Logout">
-                         <i data-lucide="log-out"></i>
-                    </a>
+                <button class="btn btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#donationModal">
+                    <i data-lucide="heart" style="width: 16px; vertical-align: text-bottom;"></i> Make a donation
+                </button>
+                <a class="btn btn-primary" href="/">Dashboard</a>
+                <button class="btn btn-sm btn-outline-secondary btn-icon" data-bs-toggle="modal"
+                    data-bs-target="#settingsModal" title="Settings">
+                    <i data-lucide="settings"></i>
+                </button>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger btn-icon" title="Logout">
+                    <i data-lucide="log-out"></i>
+                </a>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">Login</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">Login</a>
                 {% endif %}
             </div>
         </nav>
-        
+
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="alert alert-info">
-                {% for message in messages %}
-                    <div>{{ message }}</div>
-                {% endfor %}
-            </div>
+        <div class="alert alert-info">
+            {% for message in messages %}
+            <div>{{ message }}</div>
+            {% endfor %}
+        </div>
         {% endif %}
         {% endwith %}
 
@@ -46,68 +52,122 @@
 
     <!-- Settings Modal -->
     <div class="modal fade" id="settingsModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Settings</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-             <!-- Tabs -->
-             <ul class="nav nav-tabs mb-3" id="settingsTab" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-tab">General</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#resources-tab">Resources</button>
-                </li>
-             </ul>
-             
-             <div class="tab-content">
-                 <!-- General -->
-                 <div class="tab-pane fade show active" id="general-tab">
-                     <div class="mb-3">
-                         <label class="form-label">DeepL API Key</label>
-                         <input type="password" id="deepl-api-key-input" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx">
-                         <div class="form-text">Stored locally in your browser.</div>
-                     </div>
-                     <div class="mb-3 form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="theme-toggle" onchange="toggleTheme()">
-                        <label class="form-check-label" for="theme-toggle">Dark Mode</label>
-                     </div>
-                     <div class="d-grid">
-                        <button type="button" class="btn btn-primary" onclick="saveSettings()">Save General Settings</button>
-                     </div>
-                 </div>
-                 
-                 <!-- Resources -->
-                 <div class="tab-pane fade" id="resources-tab">
-                     <div class="mb-3 border p-2 rounded">
-                         <label class="form-label">Upload Translation Memory (.json)</label>
-                         <form id="form-tm" action="{{ url_for('main.api_load_tm') }}" method="post" enctype="multipart/form-data">
-                             <div class="input-group">
-                                 <input type="file" name="file" class="form-control" required accept=".json">
-                                 <button type="button" class="btn btn-outline-secondary" onclick="uploadResource('tm')">Upload</button>
-                             </div>
-                         </form>
-                     </div>
-                     <div class="mb-3 border p-2 rounded">
-                         <label class="form-label">Upload Glossary (.csv)</label>
-                         <form id="form-glossary" action="{{ url_for('main.api_load_glossary') }}" method="post" enctype="multipart/form-data">
-                             <div class="input-group">
-                                 <input type="file" name="file" class="form-control" required accept=".csv">
-                                 <button type="button" class="btn btn-outline-secondary" onclick="uploadResource('glossary')">Upload</button>
-                             </div>
-                         </form>
-                     </div>
-                 </div>
-             </div>
-          </div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="settingsTab" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab"
+                                data-bs-target="#general-tab">General</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab"
+                                data-bs-target="#resources-tab">Resources</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- General -->
+                        <div class="tab-pane fade show active" id="general-tab">
+                            <div class="mb-3">
+                                <label class="form-label">DeepL API Key</label>
+                                <input type="password" id="deepl-api-key-input" class="form-control"
+                                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx">
+                                <div class="form-text">Stored locally in your browser.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">DeepL Target Language</label>
+                                <select id="deepl-lang-select" class="form-select">
+                                    <option value="">Default (Project Target)</option>
+                                    <option value="EN-US">English (US)</option>
+                                    <option value="EN-GB">English (UK)</option>
+                                    <option value="ES">Spanish</option>
+                                    <option value="FR">French</option>
+                                    <option value="DE">German</option>
+                                    <option value="PT-BR">Portuguese (BR)</option>
+                                    <option value="PT-PT">Portuguese (PT)</option>
+                                    <option value="IT">Italian</option>
+                                    <option value="RU">Russian</option>
+                                    <option value="ZH">Chinese</option>
+                                </select>
+                                <div class="form-text">Overrides the project target language.</div>
+                            </div>
+                            <div class="mb-3 form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="theme-toggle"
+                                    onchange="toggleTheme()">
+                                <label class="form-check-label" for="theme-toggle">Dark Mode</label>
+                            </div>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary" onclick="saveSettings()">Save General
+                                    Settings</button>
+                            </div>
+                        </div>
+
+                        <!-- Resources -->
+                        <div class="tab-pane fade" id="resources-tab">
+                            <div class="mb-3 border p-2 rounded">
+                                <label class="form-label">Upload Translation Memory (.json)</label>
+                                <form id="form-tm" action="{{ url_for('main.api_load_tm') }}" method="post"
+                                    enctype="multipart/form-data">
+                                    <div class="input-group">
+                                        <input type="file" name="file" class="form-control" required accept=".json">
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            onclick="uploadResource('tm')">Upload</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="mb-3 border p-2 rounded">
+                                <label class="form-label">Upload Glossary (.csv)</label>
+                                <form id="form-glossary" action="{{ url_for('main.api_load_glossary') }}" method="post"
+                                    enctype="multipart/form-data">
+                                    <div class="input-group">
+                                        <input type="file" name="file" class="form-control" required accept=".csv">
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            onclick="uploadResource('glossary')">Upload</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+    </div>
+
+    <!-- Donation Modal -->
+    <div class="modal fade" id="donationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Support Glossio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Hi, I'm Damian, I am a father, a husband, Jesus runs my ministry, but I develop during my free
+                        time. I made this tool so other ministries could have good access to a useful, collaborative
+                        translation tool, for free. I developed this app myself and I maintain it myself. Your donation
+                        would help me support these expenses. If you liked the app, I'm open to voluntary donations via
+                        PayPal, or contact me at <a href="mailto:damiangfabio@gmail.com">damiangfabio@gmail.com</a></p>
+                    <div class="d-grid mt-4">
+                        <a href="http://paypal.me/dadlegloria" target="_blank" class="btn btn-primary btn-lg">
+                            <i data-lucide="credit-card" style="vertical-align: middle; margin-right: 5px;"></i> Donate
+                            via PayPal
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/socket_client.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
+
 </html>

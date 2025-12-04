@@ -36,5 +36,15 @@ def setup():
         else:
             print("Test user already exists.")
 
+        print("Creating second test user...")
+        if not User.query.filter_by(email='giovanna@dadlegloria.org').first():
+            u2 = User(email='giovanna@dadlegloria.org', name='Giovanna')
+            u2.set_password('jn0316')
+            db.session.add(u2)
+            db.session.commit()
+            print("SUCCESS: Second test user created.")
+            print("Email: giovanna@dadlegloria.org")
+            print("Password: jn0316")
+
 if __name__ == '__main__':
     setup()

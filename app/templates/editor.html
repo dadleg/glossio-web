@@ -1,28 +1,94 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .segment-item.has-note::after {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #ffc107;
+        /* Bootstrap warning yellow */
+        border-radius: 50%;
+        margin-left: 5px;
+        vertical-align: middle;
+    }
+
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #ffc107;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    /* Typing Dots */
+    .typing-dots {
+        display: inline-block;
+        width: 20px;
+        text-align: center;
+        font-size: 14px;
+        line-height: 10px;
+        color: #6c757d;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .typing-dots.active {
+        opacity: 1;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            opacity: 0.3;
+        }
+
+        50% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0.3;
+        }
+    }
+
+    .user-badge-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-right: 8px;
+    }
+</style>
 <div class="editor-container">
     <div class="sidebar">
-        <div class="sidebar-header">Segments</div>
+        <div class="sidebar-header">
+            Segments
+            {% if user_role == 'reviewer' %}
+            <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7em;">Review Mode</span>
+            {% endif %}
+            <span id="collab-badge" class="badge bg-info text-dark ms-2"
+                style="font-size: 0.7em; display: none;">Collaborative Mode</span>
+        </div>
         <div class="segment-list" id="segment-list">
             {% for para in structure %}
-                {% for seg in para.segments %}
-                    <div class="segment-item {% if seg.target_text %}translated{% endif %}" 
-                         id="seg-item-{{ seg.id }}"
-                         onclick="loadSegment({{ seg.id }})">
-                        <b>{{ para.p_idx + 1 }}.{{ seg.s_idx + 1 }}</b>: {{ seg.source_text[:50] }}...
-                    </div>
-                {% endfor %}
+            {% for seg in para.segments %}
+            <div class="segment-item {% if seg.target_text %}translated{% endif %} {% if seg.note %}has-note{% endif %}"
+                id="seg-item-{{ seg.id }}" onclick="loadSegment({{ seg.id }})">
+                <b>{{ para.p_idx + 1 }}.{{ seg.s_idx + 1 }}</b>: {{ seg.source_text[:50] }}...
+            </div>
+            {% endfor %}
             {% endfor %}
         </div>
     </div>
-    
+
     <div class="main-editor">
         <div class="editor-toolbar">
             <button class="btn btn-outline-secondary btn-icon btn-sm" onclick="prevSegment()" title="Previous (Ctrl+B)">
                 <i data-lucide="arrow-left"></i>
             </button>
-            <button class="btn btn-primary btn-icon btn-sm" onclick="nextSegment()" title="Next (Ctrl+N)">
+            <button class="btn btn-primary btn-icon btn-sm" onclick="nextSegment()" title="Next (Ctrl+Enter)">
                 <i data-lucide="arrow-right"></i>
             </button>
             <div class="vr mx-2"></div>
@@ -35,23 +101,26 @@
             <button class="btn btn-outline-success btn-icon btn-sm" onclick="requestMT()" title="Translate MT">
                 <i data-lucide="bot"></i>
             </button>
-            <button class="btn btn-outline-danger btn-icon btn-sm" onclick="mergePrev()" title="Merge with Previous (Ctrl+J)">
+            <button class="btn btn-outline-danger btn-icon btn-sm" onclick="mergePrev()"
+                title="Merge with Previous (Ctrl+J)">
                 <i data-lucide="merge"></i>
             </button>
-             <div class="vr mx-2"></div>
-            <button class="btn btn-outline-primary btn-icon btn-sm" data-bs-toggle="modal" data-bs-target="#searchModal" title="Search (Ctrl+Shift+F)">
+            <div class="vr mx-2"></div>
+            <button class="btn btn-outline-primary btn-icon btn-sm" data-bs-toggle="modal" data-bs-target="#searchModal"
+                title="Search (Ctrl+Shift+F)">
                 <i data-lucide="search"></i>
             </button>
-             <button class="btn btn-outline-dark btn-icon btn-sm" onclick="toggleContext()" title="Toggle Context">
+            <button class="btn btn-outline-dark btn-icon btn-sm" onclick="toggleContext()" title="Toggle Context">
                 <i data-lucide="eye"></i>
             </button>
-             <button class="btn btn-outline-secondary btn-icon btn-sm" onclick="toggleNotes()" title="Toggle Notes">
+            <button class="btn btn-outline-secondary btn-icon btn-sm" onclick="toggleNotes()" title="Toggle Notes">
                 <i data-lucide="sticky-note"></i>
             </button>
-             <a href="{{ url_for('main.export_project', project_id=project.id) }}" class="btn btn-outline-secondary btn-icon btn-sm" title="Export DOCX">
+            <a href="{{ url_for('main.export_project', project_id=project.id) }}"
+                class="btn btn-outline-secondary btn-icon btn-sm" title="Export DOCX">
                 <i data-lucide="download"></i>
             </a>
-            
+
             <div class="progress-container">
                 <span id="progress-text">0/0</span>
                 <div class="progress">
@@ -59,39 +128,48 @@
                 </div>
                 <span class="badge bg-light text-dark border" id="status-indicator">Saved</span>
             </div>
+
+            <div class="vr mx-2"></div>
+            <div id="active-users-container" class="d-flex align-items-center">
+                <!-- Avatars injected here -->
+            </div>
+            <!-- Old typing indicator removed -->
         </div>
-        
+
         <div class="work-area">
-             <div id="context-panel" class="context-panel">
+            <div id="context-panel" class="context-panel show">
                 <strong>Context:</strong> <span id="context-text"></span>
                 <button class="btn btn-sm btn-link p-0 ms-2" onclick="mergeParagraph()" title="Merge full paragraph">
                     (Edit Full Paragraph)
                 </button>
-             </div>
-             
-             <div>
+            </div>
+
+            <div>
                 <label class="info-label">Source</label>
                 <div id="source-display" class="source-card">Select a segment...</div>
-             </div>
-             
-             <div style="flex: 1; display: flex; flex-direction: column;">
+            </div>
+
+            <div style="flex: 1; display: flex; flex-direction: column;">
                 <label class="info-label">Target</label>
-                <textarea id="target-input" class="form-control target-editor" placeholder="Type translation here..."></textarea>
-             </div>
-             
-             <div id="notes-container" class="notes-container">
-                <label class="info-label">Notes</label>
+                <textarea id="target-input" class="form-control target-editor"
+                    placeholder="Type translation here..."></textarea>
+                <div id="last-modified-log" class="text-muted fst-italic mt-1"
+                    style="font-size: 0.85em; min-height: 1.2em;"></div>
+            </div>
+
+            <div id="notes-container" class="notes-container show">
+                <label class="info-label"><span class="status-dot"></span> Notes</label>
                 <textarea id="note-input" class="form-control note-editor" placeholder="Add notes..."></textarea>
-             </div>
+            </div>
         </div>
 
     </div>
-    
+
     <div class="right-sidebar">
         <!-- TOP: Bible -->
         <div class="right-sidebar-top">
             <label class="info-label"><i data-lucide="book-open" style="width:14px;"></i> Bible</label>
-            
+
             <div class="mb-2">
                 <select id="bible-version-select" class="form-select form-select-sm mb-1" onchange="onVersionChange()">
                     <option value="">Loading versions...</option>
@@ -108,33 +186,35 @@
                 </div>
             </div>
 
-            <div id="bible-content-area" class="flex-grow-1 border rounded p-2 bg-light overflow-auto" style="font-size: 0.9em;">
-                <p class="text-muted text-center mt-3">Select details and click OK, or click a highlighted reference in the source text.</p>
+            <div id="bible-content-area" class="flex-grow-1 border rounded p-2 bg-light overflow-auto"
+                style="font-size: 0.9em;">
+                <p class="text-muted text-center mt-3">Select details and click OK, or click a highlighted reference in
+                    the source text.</p>
             </div>
             <button class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="pasteBibleText()">
                 <i data-lucide="copy"></i> Paste to Target
             </button>
         </div>
-        
+
         <!-- BOTTOM: Info -->
         <div class="right-sidebar-bottom">
             <div class="mb-2 pb-1 border-bottom">
                 <label class="info-label"><i data-lucide="layers" style="width:14px;"></i> Resources</label>
             </div>
-            
+
             <div class="info-section" id="section-tm" style="display:none;">
-                 <label class="info-label">Translation Memory</label>
-                 <div id="tm-info" class="info-card"><span id="tm-match-text"></span></div>
+                <label class="info-label">Translation Memory</label>
+                <div id="tm-info" class="info-card"><span id="tm-match-text"></span></div>
             </div>
             <div class="info-section" id="section-glossary" style="display:none;">
-                 <label class="info-label">Glossary</label>
-                 <div id="glossary-info" class="info-card"><span id="glossary-text"></span></div>
+                <label class="info-label">Glossary</label>
+                <div id="glossary-info" class="info-card"><span id="glossary-text"></span></div>
             </div>
-             <div class="info-section" id="section-resources" style="display:none;">
-                 <label class="info-label">Resources</label>
-                 <div id="links-info" class="d-flex flex-column gap-2">
-                     <!-- Links injected here -->
-                 </div>
+            <div class="info-section" id="section-resources" style="display:none;">
+                <label class="info-label">Resources</label>
+                <div id="links-info" class="d-flex flex-column gap-2">
+                    <!-- Links injected here -->
+                </div>
             </div>
         </div>
     </div>
@@ -144,36 +224,41 @@
     window.GLOSSIO_CONFIG = {
         targetLang: "{{ project.target_lang }}",
         projectId: "{{ project.id }}",
-        segments: []
+        userId: {{ current_user.id }},
+    segments: []
     };
     {% for para in structure %}
-        {% for seg in para.segments %}
-            window.GLOSSIO_CONFIG.segments.push({{ seg.id }});
-        {% endfor %}
+    {% for seg in para.segments %}
+    window.GLOSSIO_CONFIG.segments.push({{ seg.id }});
     {% endfor %}
+    {% endfor %}
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initSocket(window.GLOSSIO_CONFIG.projectId);
+    });
 </script>
 <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
 
 <!-- Search Modal -->
 <div class="modal fade" id="searchModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Search in Project</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-         <div class="input-group mb-3">
-             <input type="text" id="search-query" class="form-control" placeholder="Search text...">
-             <select id="search-type" class="form-select" style="max-width: 100px;">
-                 <option value="source">Source</option>
-                 <option value="target">Target</option>
-             </select>
-             <button class="btn btn-primary" onclick="performSearch()">Search</button>
-         </div>
-         <div id="search-results" class="list-group" style="max-height: 300px; overflow-y: auto;"></div>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Search in Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" id="search-query" class="form-control" placeholder="Search text...">
+                    <select id="search-type" class="form-select" style="max-width: 100px;">
+                        <option value="source">Source</option>
+                        <option value="target">Target</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="performSearch()">Search</button>
+                </div>
+                <div id="search-results" class="list-group" style="max-height: 300px; overflow-y: auto;"></div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}

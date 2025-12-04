@@ -8,11 +8,17 @@
         <div class="dashboard-card card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="mb-0">Dashboard</h1>
-                <a href="{{ url_for('main.new_project') }}" class="btn btn-primary">
-                    <i data-lucide="plus"></i> New Project
-                </a>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" data-bs-toggle="modal"
+                        data-bs-target="#profileModal">
+                        <i data-lucide="user"></i> Profile
+                    </button>
+                    <a href="{{ url_for('main.new_project') }}" class="btn btn-primary">
+                        <i data-lucide="plus"></i> New Project
+                    </a>
+                </div>
             </div>
-            
+
             <h3 class="mb-3">Recent Projects</h3>
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -20,26 +26,47 @@
                         <tr>
                             <th>ID</th>
                             <th>Filename</th>
+                            <th>Role</th>
                             <th>Lang Pair</th>
                             <th>Created At</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for p in projects %}
+                        {% for item in projects %}
+                        {% set p = item.project %}
+                        {% set role = item.role %}
                         <tr>
                             <td>{{ p.id }}</td>
                             <td>{{ p.filename }}</td>
+                            <td>
+                                {% if role == 'owner' %}
+                                <span class="badge bg-primary">Owner</span>
+                                {% elif role == 'editor' %}
+                                <span class="badge bg-success">Editor</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Reviewer</span>
+                                {% endif %}
+                            </td>
                             <td>{{ p.source_lang }} -> {{ p.target_lang }}</td>
                             <td>{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                             <td>
-                                <a href="{{ url_for('main.editor', project_id=p.id) }}" class="btn btn-sm btn-success">Open</a>
-                                <a href="{{ url_for('main.export_project', project_id=p.id) }}" class="btn btn-sm btn-info">Export</a>
+                                <a href="{{ url_for('main.editor', project_id=p.id) }}"
+                                    class="btn btn-sm btn-success">Open</a>
+                                <a href="{{ url_for('main.export_project', project_id=p.id) }}"
+                                    class="btn btn-sm btn-info">Export</a>
+                                {% if role == 'owner' %}
+                                <button class="btn btn-sm btn-outline-secondary"
+                                    onclick="openShareModal({{ p.id }}, '{{ p.filename }}')">Share</button>
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-danger"
+                                    onclick="resignProject({{ p.id }}, '{{ p.filename }}')">Resign</button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
+                            <td colspan="6" class="text-center text-muted py-4">
                                 No projects found. Start by creating a new one!
                             </td>
                         </tr>
@@ -47,6 +74,113 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Assign a reviewer to project: <strong id="share-filename"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label">Reviewer Email</label>
+                    <input type="email" id="share-email" class="form-control" placeholder="user@example.com">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select id="share-role" class="form-select">
+                        <option value="reviewer">Reviewer</option>
+                        <option value="editor">Editor</option>
+                    </select>
+                </div>
+                <div id="share-msg" class="mb-2"></div>
+                <input type="hidden" id="share-id">
+                <button class="btn btn-primary w-100" onclick="assignReviewer()">Send Invitation</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openShareModal(id, filename) {
+        document.getElementById('share-id').value = id;
+        document.getElementById('share-filename').innerText = filename;
+        document.getElementById('share-email').value = '';
+        document.getElementById('share-msg').innerText = '';
+        document.getElementById('share-role').value = 'reviewer'; // Default to reviewer
+        new bootstrap.Modal(document.getElementById('shareModal')).show();
+    }
+
+    function assignReviewer() {
+        const id = document.getElementById('share-id').value;
+        const email = document.getElementById('share-email').value;
+        const role = document.getElementById('share-role').value;
+        const msg = document.getElementById('share-msg');
+
+        if (!email) return;
+
+        fetch(`/api/project/${id}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, role: role })
+        }).then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    msg.className = "text-success";
+                    msg.innerText = "Assigned successfully!";
+                    setTimeout(() => location.reload(), 1000);
+                } else if (data.status === 'already_assigned') {
+                    msg.className = "text-warning";
+                    msg.innerText = "User is already assigned.";
+                } else {
+                    msg.className = "text-danger";
+                    msg.innerText = data.error || "Error assigning user.";
+                }
+            });
+    }
+
+    function resignProject(id, filename) {
+        if (!confirm(`Are you sure you want to resign from project "${filename}"? Your contributions will remain.`)) return;
+
+        fetch(`/api/project/${id}/resign`, {
+            method: 'POST'
+        }).then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert(data.error || "Error resigning.");
+                }
+            });
+    }
+</script>
+<!-- Profile Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('main.update_profile') }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ current_user.name or '' }}"
+                            placeholder="Enter your name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

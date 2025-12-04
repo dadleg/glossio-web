@@ -2,10 +2,14 @@ lucide.createIcons();
 
 // Settings Logic
 const apiKeyInput = document.getElementById('deepl-api-key-input');
+const langSelect = document.getElementById('deepl-lang-select');
 
 function loadSettings() {
     const key = localStorage.getItem('glossio_deepl_key');
     if(key && apiKeyInput) apiKeyInput.value = key;
+    
+    const lang = localStorage.getItem('glossio_target_lang');
+    if(lang && langSelect) langSelect.value = lang;
     
     // Theme
     const theme = localStorage.getItem('glossio_theme') || 'light';
@@ -21,6 +25,14 @@ function saveSettings() {
     } else {
         localStorage.removeItem('glossio_deepl_key');
     }
+    
+    const lang = langSelect.value;
+    if(lang) {
+        localStorage.setItem('glossio_target_lang', lang);
+    } else {
+        localStorage.removeItem('glossio_target_lang');
+    }
+    
     alert("Settings saved!");
     const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
     modal.hide();

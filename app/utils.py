@@ -198,8 +198,9 @@ class TextUtils:
         
         # Regex for Title + Ref (Ref must be digits.digits)
         # Handles: "Title, p. 12.3", "Title 12.3", "(Title, 12.3)"
-        # Removed start anchor ^ to find embedded citations
-        regex_full = r'(.+?)(?:,\s*|\s+)(?:p\.|pp\.|page|vol\.\s*\d+)?\s*(\d+(?:\:\d+)?\.\d+)'
+        # Improved: Uses [A-Z] to find start of title to avoid matching long preceding text.
+        # Captures: (Title) (Ref)
+        regex_full = r'([A-Z][a-zA-Z\s]+?)(?:,\s*|\s+)(?:p\.|pp\.|page|vol\.\s*\d+)?\s*(\d+(?:\:\d+)?\.\d+)'
         match_full = re.search(regex_full, clean_text)
 
         # Try finding exact abbreviation first (most specific)
