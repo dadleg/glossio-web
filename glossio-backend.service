@@ -1,0 +1,29 @@
+# copy of the original glossio-backend.service file located on my server
+
+[Unit]
+Description=Gunicorn instance para mi Backend (API)
+After=network.target
+
+[Service]
+User=damiangfabio
+Group=www-data
+# ¡RUTA A LA CARPETA DE TU BACKEND! (Asegurate que esta ruta sea la correcta)
+WorkingDirectory=/home/damiangfabio/glossio-web
+UMask=0007
+ExecStartPre=/bin/bash -c 'source /home/damiangfabio/glossio-web/venv/bin/activate'
+
+# URL CORREGIDA. Reemplazá los placeholders:
+Environment="DATABASE_URL=postgresql://dadleg:Dami.0316@127.0.0.1/catapp?sslmode=disable"
+Environment="SECRET_KEY=88ad3921f2a5a950cc817d5d637efc7a"
+
+# Comando para debug: binding a un puerto simple para ver el error en el shell
+# /home/damiangfabio/glossio-web/venv/bin/gunicorn --workers 1 --bind 0.0.0.0:8000 app:create_app
+
+# Usamos un socket diferente para que Nginx sepa distinguirlos
+# IMPORTANT: Updated for Real-time features (SocketIO)
+# -k eventlet: Required for WebSocket support
+# -w 1: Recommended for SocketIO (unless using Redis/RabbitMQ)
+ExecStart=/home/damiangfabio/glossio-web/venv/bin/gunicorn --worker-class eventlet -w 1 --bind unix:/home/damiangfabio/glossio-web/glossio-backend.sock wsgi:application
+
+[Install]
+WantedBy=multi-user.target
