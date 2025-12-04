@@ -64,7 +64,11 @@ class Segment(db.Model):
     last_modified_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     last_modified_at = db.Column(db.DateTime)
     
+    locked_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    locked_at = db.Column(db.DateTime, nullable=True)
+    
     last_modified_by = db.relationship('User', foreign_keys=[last_modified_by_id])
+    locked_by = db.relationship('User', foreign_keys=[locked_by_user_id])
     
 class TranslationMemory(db.Model):
     id = db.Column(db.Integer, primary_key=True)

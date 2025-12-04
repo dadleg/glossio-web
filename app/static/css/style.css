@@ -100,3 +100,24 @@ body { padding-top: 10px; height: 100vh; display: flex; flex-direction: column; 
 [data-bs-theme="dark"] .bg-light {
     background-color: #2b3035 !important;
 }
+
+/* Locked State */
+.segment-item.locked {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+[data-bs-theme="dark"] .segment-item.locked {
+    background-color: #343a40;
+    color: #6c757d;
+}
+
+.locked-overlay {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.lock-badge {
+    vertical-align: middle;
+}

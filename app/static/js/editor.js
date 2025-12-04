@@ -62,8 +62,12 @@ function toggleNotes() {
 }
 
 function loadSegment(id) {
+    // Unlock previous if exists
     if (currentSegmentId && currentSegmentId !== id) {
         saveSegment(currentSegmentId);
+        if (typeof emitUnlockSegment === 'function') {
+            emitUnlockSegment(currentSegmentId);
+        }
     }
 
     currentSegmentId = id;
@@ -73,6 +77,11 @@ function loadSegment(id) {
     if (item) {
         item.classList.add('active');
         item.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    // Lock new segment
+    if (typeof emitLockSegment === 'function') {
+        emitLockSegment(id);
     }
 
     fetch(`/api/segment/${id}`)
@@ -90,6 +99,13 @@ function loadSegment(id) {
             document.getElementById('context-text').innerText = data.paragraph_context;
             document.getElementById('target-input').value = data.target_text || "";
             document.getElementById('note-input').value = data.note || "";
+
+            // Check lock status from API
+            if (data.locked_by_user_id && data.locked_by_user_id !== currentUserId) {
+                setEditorLocked(true, data.locked_by_name);
+            } else {
+                setEditorLocked(false);
+            }
 
             // --- Info Panel Dynamic Visibility ---
 
@@ -147,8 +163,9 @@ function loadSegment(id) {
             if (data.last_modified_by_name) {
                 // Format date nicely
                 const date = new Date(data.last_modified_at);
-                const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-                logDiv.innerText = `Last edited by ${data.last_modified_by_name} on ${dateStr}`;
+                const dateStr = date.toLocaleDateString() + ', ' + date.toLocaleTimeString();
+                logDiv.innerText = `Last edited by ${data.last_modified_by_name}, ${dateStr}`;
+                logDiv.style.display = 'block'; // Ensure it's visible
 
                 // Color logic: Only if shared project (implied if last_modified_by_name is present and different?)
                 // User request: "Color does not change solo-working". 
@@ -217,11 +234,23 @@ if (targetInput) {
         saveSegment(currentSegmentId);
     });
 
-    // Typing indicator
+    // Typing indicator & Real-time Sync
+    let typingTimeout;
     targetInput.addEventListener('input', () => {
+        // Emit typing indicator
         if (typeof emitTyping === 'function') {
             emitTyping(currentSegmentId);
         }
+
+        // Emit real-time update (Debounced)
+        if (typingTimeout) clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            if (typeof emitSegmentUpdate === 'function') {
+                const target = document.getElementById('target-input').value;
+                const note = document.getElementById('note-input').value;
+                emitSegmentUpdate(currentSegmentId, target, note);
+            }
+        }, 300); // 300ms debounce
     });
 }
 

@@ -7,8 +7,10 @@ from app.utils import TextUtils, lookup_tm, lookup_glossary, get_nlp
 import os
 import re
 import requests
+import requests
 import docx
 from docx import Document
+from datetime import datetime
 
 bp = Blueprint('main', __name__)
 
@@ -257,28 +259,54 @@ def get_segment(segment_id):
         'bible_data': bible_data,
         'egw_data': egw_data,
         'last_modified_by_name': (segment.last_modified_by.name or segment.last_modified_by.email) if segment.last_modified_by else None,
-        'last_modified_at': segment.last_modified_at.isoformat() if segment.last_modified_at else None
+        'last_modified_at': segment.last_modified_at.isoformat() if segment.last_modified_at else None,
+        'locked_by_user_id': segment.locked_by_user_id,
+        'locked_by_name': (segment.locked_by.name or segment.locked_by.email) if segment.locked_by else None
     })
 
 @bp.route('/api/segment/<int:segment_id>/save', methods=['POST'])
 @login_required
 def save_segment(segment_id):
+    print(f"DEBUG: save_segment called for {segment_id} by user {current_user.id}")
     segment = Segment.query.get_or_404(segment_id)
     para = Paragraph.query.get(segment.paragraph_id)
     proj = Project.query.get(para.project_id)
     
     # Auth Check
     if proj.user_id != current_user.id and current_user not in proj.assigned_users:
+        print("DEBUG: Unauthorized save attempt")
         return jsonify({'error': 'Unauthorized'}), 403
+
+    # Lock Check
+    # Ensure we compare ints
+    current_user_id = int(current_user.id)
+    print(f"DEBUG: Lock check - Seg Locked By: {segment.locked_by_user_id}, Current User: {current_user_id}")
+    if segment.locked_by_user_id and segment.locked_by_user_id != current_user_id:
+        print("DEBUG: Segment locked by another user")
+        return jsonify({'error': f'Segment is locked by another user (Locked by: {segment.locked_by_user_id}, You: {current_user_id})'}), 403
 
     data = request.json
     target = data.get('target_text', '')
     note = data.get('note', '')
     
+    print(f"DEBUG: Saving target: '{target}'")
+    
     segment.target_text = target
     segment.note = note
     segment.last_modified_by_id = current_user.id
     segment.last_modified_at = datetime.utcnow()
+    
+    # Release lock on save (optional, but requested: "The user that has the segment assigned has the priority over the segment until clicks 'next' and the segment is saved")
+    # Actually, usually 'Next' triggers save. So we can unlock here.
+    # But if they just save (Ctrl+S) without moving, maybe keep lock?
+    # The requirement says "until clicks 'next' and the segment is saved".
+    # Let's assume explicit unlock is handled by the frontend when moving, 
+    # but we can also clear it here if we want to be strict.
+    # However, if I am still on the segment, I should keep the lock.
+    # So I will NOT unlock here automatically, unless the frontend requests it or moves away.
+    # Wait, "The user that has the segment assigned has the priority over the segment until clicks 'next' and the segment is saved"
+    # This implies the lock duration is the editing session.
+    # I will let the frontend handle the unlock when 'Next' is clicked (which calls save then moves).
     
     # Update TM if target is not empty
     if target.strip():
@@ -315,6 +343,16 @@ def save_segment(segment_id):
             exists.last_modified_by_id = current_user.id
             exists.last_modified_at = datetime.utcnow()
             
+    # Log the edit
+    log = AuditLog(
+        project_id=proj.id,
+        user_id=current_user.id,
+        segment_id=segment_id,
+        action='edit',
+        details=f"Updated segment {segment.s_idx}"
+    )
+    db.session.add(log)
+
     db.session.commit()
     
     return jsonify({'status': 'success'})
