@@ -259,13 +259,13 @@
 
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyAxd7JFdw_Zd66BugO73IgPO93RyHVRFWQ",
-            authDomain: "stone-booking-429504-b2.firebaseapp.com",
-            projectId: "stone-booking-429504-b2",
-            storageBucket: "stone-booking-429504-b2.firebasestorage.app",
-            messagingSenderId: "726343101765",
-            appId: "1:726343101765:web:bf207b5f0c5ca6fc60222c",
-            measurementId: "G-HFE84SPQ83"
+            apiKey: "{{ firebase_api_key }}",
+            authDomain: "{{ firebase_auth_domain }}",
+            projectId: "{{ firebase_project_id }}",
+            storageBucket: "{{ firebase_storage_bucket }}",
+            messagingSenderId: "{{ firebase_messaging_sender_id }}",
+            appId: "{{ firebase_app_id }}",
+            measurementId: "{{ firebase_measurement_id }}"
         };
 
         const app = initializeApp(firebaseConfig);

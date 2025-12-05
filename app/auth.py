@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User
 from app.extensions import db
@@ -64,7 +64,14 @@ def login():
         else:
             flash('Invalid email or password')
             
-    return render_template('login.html')
+    return render_template('login.html',
+                           firebase_api_key=current_app.config['FIREBASE_API_KEY'],
+                           firebase_auth_domain=current_app.config['FIREBASE_AUTH_DOMAIN'],
+                           firebase_project_id=current_app.config['FIREBASE_PROJECT_ID'],
+                           firebase_storage_bucket=current_app.config['FIREBASE_STORAGE_BUCKET'],
+                           firebase_messaging_sender_id=current_app.config['FIREBASE_MESSAGING_SENDER_ID'],
+                           firebase_app_id=current_app.config['FIREBASE_APP_ID'],
+                           firebase_measurement_id=current_app.config['FIREBASE_MEASUREMENT_ID'])
 
 # @bp.route('/register', methods=['GET', 'POST'])
 # def register():
