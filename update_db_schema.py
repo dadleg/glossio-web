@@ -1,9 +1,10 @@
-from app import create_app, db
-from sqlalchemy import text, inspect
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
+from app import create_app, db
+from sqlalchemy import text, inspect
 
 def update_schema():
     print(f"DATABASE_URL from env: {os.environ.get('DATABASE_URL')}")
