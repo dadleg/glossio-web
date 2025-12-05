@@ -45,7 +45,7 @@ def firebase_login():
 
     except Exception as e:
         print(f"Firebase login error: {e}")
-        return jsonify({'success': False, 'message': f'Invalid token: {str(e)}'}), 401
+        return jsonify({'success': False, 'message': f'Invalid token [DEBUG_CHECK]: {str(e)}'}), 401
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
