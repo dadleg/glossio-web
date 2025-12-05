@@ -1,13 +1,16 @@
 from app import create_app, db
 from sqlalchemy import text, inspect
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
 def update_schema():
+    print(f"DATABASE_URL from env: {os.environ.get('DATABASE_URL')}")
     app = create_app()
     with app.app_context():
         db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+        print(f"Configured SQLALCHEMY_DATABASE_URI: {db_uri}")
         print(f"Checking database schema for: {db_uri.split('@')[-1] if '@' in db_uri else db_uri}...")
         inspector = inspect(db.engine)
         
