@@ -1,5 +1,8 @@
 from app import create_app, db
 from sqlalchemy import text, inspect
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def update_schema():
     app = create_app()

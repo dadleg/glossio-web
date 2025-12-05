@@ -1,4 +1,8 @@
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from app import create_app, db
 from app.models import User
 
