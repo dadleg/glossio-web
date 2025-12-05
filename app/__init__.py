@@ -13,6 +13,9 @@ def create_app(config_class=Config):
     login.init_app(app)
     socketio.init_app(app, async_mode='eventlet')
     
+    from app.extensions import init_firebase
+    init_firebase(app)
+    
     from app import events # Register events
 
     from app.routes import bp as main_bp

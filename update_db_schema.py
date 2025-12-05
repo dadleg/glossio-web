@@ -8,18 +8,22 @@ def update_schema():
         print(f"Checking database schema for: {db_uri.split('@')[-1] if '@' in db_uri else db_uri}...")
         inspector = inspect(db.engine)
         
-        # 1. Check for 'name' column in 'user' table
+        # 1. Check for 'name' and 'firebase_uid' columns in 'user' table
         try:
             columns = [c['name'] for c in inspector.get_columns('user')]
             
-            if 'name' not in columns:
-                print("Adding 'name' column to 'user' table...")
-                with db.engine.connect() as conn:
+            with db.engine.connect() as conn:
+                if 'name' not in columns:
+                    print("Adding 'name' column to 'user' table...")
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN name VARCHAR(100)"))
                     conn.commit()
-                print("Done.")
-            else:
-                print("'name' column already exists in 'user' table.")
+                
+                if 'firebase_uid' not in columns:
+                    print("Adding 'firebase_uid' column to 'user' table...")
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN firebase_uid VARCHAR(128)"))
+                    conn.commit()
+                    
+            print("User table check complete.")
         except Exception as e:
             print(f"Error checking/updating 'user' table: {e}")
 

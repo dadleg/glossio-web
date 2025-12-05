@@ -10,3 +10,8 @@ class Config:
     # App specific config
     # Default to None to ensure it's provided via ENV for security
     DEEPL_API_KEY = os.environ.get('DEEPL_API_KEY')
+
+    # Firebase Config
+    # Firebase Config
+    FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH') or os.path.join(os.getcwd(), 'serviceAccountKey.json')
+

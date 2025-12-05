@@ -14,6 +14,7 @@ project_assignments = db.Table('project_assignments',
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    firebase_uid = db.Column(db.String(128), unique=True, nullable=True) # Link to Firebase User
     name = db.Column(db.String(100)) # Display name
     password_hash = db.Column(db.String(128))
     

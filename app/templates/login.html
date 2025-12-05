@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,133 +19,346 @@
             justify-content: center;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .login-container {
+
+        .login-wrapper {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             width: 100%;
-            max-width: 480px;
+            max-width: 900px;
+            padding: 20px;
+            gap: 40px;
         }
+
+        .login-left {
+            flex: 1;
+            text-align: left;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
         .brand-logo {
-            margin-bottom: 2rem;
-            text-align: center;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
         }
+
         .brand-logo h1 {
-            display: inline-block;
-            vertical-align: middle;
             font-weight: 700;
-            color: #fff;
-            margin: 0 0 0 10px;
-            font-size: 3rem;
+            margin: 0 0 0 15px;
+            font-size: 3.5rem;
+            line-height: 1;
         }
-        .login-card {
-            background: rgba(43, 45, 49, 0.95); /* Discord dark gray, mostly opaque */
-            padding: 2rem;
-            border-radius: 5px;
-            width: 100%;
-            box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
-            color: #dbdee1;
-        }
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .login-header h3 {
-            color: #fff;
+
+        .welcome-text h3 {
             font-weight: 600;
+            font-size: 2rem;
             margin-bottom: 0.5rem;
         }
-        .login-header p {
-            color: #b5bac1;
+
+        .welcome-text p {
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
+
+        .login-right {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .login-card {
+            background: white;
+            color: #333;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
         .form-label {
-            text-transform: uppercase;
             font-size: 12px;
-            font-weight: 700;
-            color: #b5bac1;
-            margin-bottom: 8px;
-        }
-        .form-control {
-            background-color: #1e1f22;
-            border: none;
-            color: #dbdee1;
-            height: 40px;
-            padding: 10px;
-        }
-        .form-control:focus {
-            background-color: #1e1f22;
-            color: #dbdee1;
-            box-shadow: none;
-            outline: none; /* Add Discord-like focus ring if desired, keeping simple */
-        }
-        .btn-primary {
-            background-color: #5865f2; /* Discord Blurple */
-            border: none;
-            height: 45px;
             font-weight: 600;
-            font-size: 16px;
-            width: 100%;
-            margin-top: 1rem;
-            transition: background-color 0.2s;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
         }
+
+        .form-control {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #333;
+            height: 38px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            background-color: #fff;
+            border-color: #5865f2;
+            box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.25);
+        }
+
+        .btn-primary {
+            background-color: #5865f2;
+            border: none;
+            height: 38px;
+            font-weight: 600;
+            font-size: 14px;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
         .btn-primary:hover {
             background-color: #4752c4;
         }
-        .login-footer {
-            margin-top: 1.5rem;
-            font-size: 14px;
-            color: #949ba4;
+
+        .nav-tabs .nav-link {
+            color: #666;
+            font-weight: 500;
         }
-        .alert {
-            font-size: 14px;
-            padding: 10px;
-            margin-bottom: 15px;
+
+        .nav-tabs .nav-link.active {
+            color: #5865f2;
+            font-weight: 600;
+        }
+
+        .login-footer {
+            margin-top: 1rem;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .login-footer a {
+            color: #5865f2;
+            text-decoration: none;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .login-wrapper {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .login-left {
+                text-align: center;
+            }
+
+            .brand-logo {
+                justify-content: center;
+            }
+
+            .login-right {
+                width: 100%;
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <div class="login-container">
-        <div class="brand-logo">
-            <i data-lucide="languages" style="width: 48px; height: 48px; color: white;"></i>
-            <h1>Glossio</h1>
+    <div class="login-wrapper">
+        <!-- Left Side: Logo & Welcome -->
+        <div class="login-left">
+            <div class="brand-logo">
+                <i data-lucide="languages" style="width: 64px; height: 64px; color: white;"></i>
+                <h1>Glossio</h1>
+            </div>
+            <div class="welcome-text">
+                <h3>Welcome!</h3>
+                <p>Sign in or create an account to continue</p>
+            </div>
         </div>
 
-        <div class="login-card">
-            <div class="login-header">
-                <h3>Welcome back!</h3>
-                <p>We're so excited to see you again!</p>
-            </div>
+        <!-- Right Side: Login Card -->
+        <div class="login-right">
+            <div class="login-card">
+                <div id="alert-container"></div>
 
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-danger">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-            {% endwith %}
+                <!-- Tabs -->
+                <ul class="nav nav-tabs nav-fill mb-3" id="authTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane"
+                            type="button" role="tab">Login</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane"
+                            type="button" role="tab">Sign Up</button>
+                    </li>
+                </ul>
 
-            <form method="post">
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" name="email" required>
+                <div class="tab-content" id="authTabContent">
+                    <!-- Login Form -->
+                    <div class="tab-pane fade show active" id="login-pane" role="tabpanel">
+                        <form id="email-signin-form">
+                            <div class="mb-2">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign In</button>
+                        </form>
+                    </div>
+
+                    <!-- Registration Form -->
+                    <div class="tab-pane fade" id="register-pane" role="tabpanel">
+                        <form id="email-signup-form">
+                            <div class="mb-2">
+                                <label for="reg-name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="reg-name" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="reg-email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="reg-email" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="reg-password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="reg-password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reg-confirm-password" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="reg-confirm-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign Up</button>
+                        </form>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" name="password" required>
+
+                <div class="text-center my-3 text-muted" style="font-size: 12px;">OR</div>
+
+                <div class="d-grid gap-2">
+                    <button id="google-signin-btn" class="btn btn-outline-secondary btn-sm"
+                        style="font-weight: 600; height: 38px;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"
+                            style="width: 16px; margin-right: 8px;">
+                        Sign in with Google
+                    </button>
                 </div>
-                <button type="submit" class="btn btn-primary">Log In</button>
-            </form>
-            
-            <div class="login-footer">
-                <p>Need an account? Contact the administrator.</p>
+
+                <div class="login-footer">
+                    <p>Having trouble? <a href="https://t.me/damiangfabio" target="_blank">Contact the Administrator</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAxd7JFdw_Zd66BugO73IgPO93RyHVRFWQ",
+            authDomain: "stone-booking-429504-b2.firebaseapp.com",
+            projectId: "stone-booking-429504-b2",
+            storageBucket: "stone-booking-429504-b2.firebasestorage.app",
+            messagingSenderId: "726343101765",
+            appId: "1:726343101765:web:bf207b5f0c5ca6fc60222c",
+            measurementId: "G-HFE84SPQ83"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        async function handleLogin(user) {
+            try {
+                const idToken = await user.getIdToken();
+                const response = await fetch('/auth/firebase-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ idToken: idToken }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    showAlert(data.message || 'Login failed', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('An error occurred during login', 'danger');
+            }
+        }
+
+        document.getElementById('google-signin-btn').addEventListener('click', () => {
+            signInWithPopup(auth, googleProvider)
+                .then((result) => {
+                    handleLogin(result.user);
+                }).catch((error) => {
+                    console.error(error);
+                    showAlert(error.message, 'danger');
+                });
+        });
+
+        document.getElementById('email-signin-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    handleLogin(userCredential.user);
+                })
+                .catch((error) => {
+                    console.error(error);
+                    showAlert(error.message, 'danger');
+                });
+        });
+
+        document.getElementById('email-signup-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                showAlert("Passwords do not match", "danger");
+                return;
+            }
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    // Update profile with name
+                    updateProfile(user, {
+                        displayName: name
+                    }).then(() => {
+                        // Profile updated, now login
+                        handleLogin(user);
+                    }).catch((error) => {
+                        console.error("Error updating profile:", error);
+                        // Try logging in anyway, name might be missing but account exists
+                        handleLogin(user);
+                    });
+                })
+                .catch((error) => {
+                    console.error(error);
+                    showAlert(error.message, 'danger');
+                });
+        });
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }
+
         lucide.createIcons();
     </script>
 </body>
+
 </html>

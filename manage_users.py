@@ -55,6 +55,26 @@ def main():
             db.session.delete(user)
             db.session.commit()
             print(f"User {email} deleted.")
+
+        elif command == 'update_email':
+            if len(sys.argv) != 4:
+                print("Usage: python manage_users.py update_email <old_email> <new_email>")
+                return
+            old_email = sys.argv[2]
+            new_email = sys.argv[3]
+            
+            user = User.query.filter_by(email=old_email).first()
+            if not user:
+                print(f"Error: User {old_email} not found.")
+                return
+            
+            if User.query.filter_by(email=new_email).first():
+                print(f"Error: Email {new_email} is already taken.")
+                return
+
+            user.email = new_email
+            db.session.commit()
+            print(f"Successfully updated email from {old_email} to {new_email}.")
             
         else:
             usage()
