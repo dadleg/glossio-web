@@ -12,7 +12,27 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 
-<body class="{% block body_class %}{% endblock %}">
+<body class="{% block body_class %}{% endblock %}" data-bs-theme="light">
+    <!-- Custom Electron Title Bar -->
+    <div class="app-title-bar">
+        <div class="app-title">
+            <img src="{{ url_for('static', filename='glossiologo.png') }}" alt="" class="title-logo">
+            <span>Glossio - Translation Assistant</span>
+        </div>
+        <div class="window-controls">
+            <button class="window-control-btn" onclick="window.electronAPI.controlWindow('minimize')" title="Minimize">
+                <i data-lucide="minus"></i>
+            </button>
+            <button class="window-control-btn" onclick="window.electronAPI.controlWindow('maximize')" title="Maximize">
+                <i data-lucide="square"></i>
+            </button>
+            <button class="window-control-btn close-btn" onclick="window.electronAPI.controlWindow('close')"
+                title="Close">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+    </div>
+
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between">
             <a class="navbar-brand" href="/">
@@ -22,9 +42,11 @@
 
             <div class="d-flex align-items-center gap-3">
                 {% if current_user.is_authenticated %}
+                <!-- 
                 <button class="btn btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#donationModal">
                     <i data-lucide="heart" style="width: 16px; vertical-align: text-bottom;"></i> Make a donation
                 </button>
+                -->
                 <a class="btn btn-primary" href="/">Dashboard</a>
                 <button class="btn btn-sm btn-outline-secondary btn-icon" data-bs-toggle="modal"
                     data-bs-target="#settingsModal" title="Settings">

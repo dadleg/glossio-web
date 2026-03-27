@@ -1,0 +1,103 @@
+# Glossio Docker Compose Configuration
+#
+# Services:
+#   - web: Flask application server
+#   - ai-worker: Background translation worker (GPU)
+#   - redis: Message broker for job queue
+#   - db: PostgreSQL database (optional, can use SQLite for dev)
+#
+# Usage:
+#   docker-compose up -d              # Start all services
+#   docker-compose up -d web redis    # Start without AI worker (dev mode)
+#   docker-compose logs -f ai-worker  # View worker logs
+#   docker-compose down               # Stop all services
+
+version: '3.8'
+
+services:
+  # Flask Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///catapp.db}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - /home/dadleg/.glossio/catapp.db:/app/catapp.db
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # AI Translation Worker (AMD ROCm GPU)
+  ai-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai
+    # AMD GPU passthrough
+    devices:
+      - "/dev/kfd" # AMD GPU kernel driver
+      - "/dev/dri" # Direct Rendering Infrastructure
+    group_add:
+      - video
+      - render
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///catapp.db}
+      - HF_HOME=/models
+      - HF_TOKEN=${HF_TOKEN}
+      - HSA_OVERRIDE_GFX_VERSION=${HSA_OVERRIDE_GFX_VERSION:-10.3.0}
+      - HSA_ENABLE_SDMA=0
+      - PYTORCH_HIP_ALLOC_CONF=max_split_size_mb:512
+      - FORCE_CPU=1
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - huggingface-cache:/models
+      - /home/dadleg/.glossio/catapp.db:/app/catapp.db
+    depends_on:
+      - redis
+    restart: unless-stopped
+    # Scale to 0 for dev without GPU
+    # docker-compose up -d --scale ai-worker=0
+
+    # Redis Message Broker
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+  # PostgreSQL Database (optional - uncomment for production)
+  # db:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     POSTGRES_DB: glossio
+  #     POSTGRES_USER: glossio
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   restart: unless-stopped
+
+volumes:
+  huggingface-cache:
+    name: glossio-hf-cache
+  redis-data:
+    name: glossio-redis-data
+  # postgres-data:
+  #   name: glossio-postgres-data
+
+networks:
+  default:
+    name: glossio-network

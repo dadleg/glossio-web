@@ -101,6 +101,64 @@ function initSocket(projectId) {
         updateActiveUsersUI();
     });
 
+    // Listen for merge events from other users
+    socket.on('segment_merged_broadcast', (data) => {
+        console.log('Segment merged by another user:', data);
+
+        // Remove deleted segment from DOM
+        const deletedItem = document.getElementById(`seg-item-${data.deleted_segment_id}`);
+        if (deletedItem) {
+            deletedItem.remove();
+        }
+
+        // Update segments array if available
+        if (typeof segments !== 'undefined') {
+            const idx = segments.indexOf(data.deleted_segment_id);
+            if (idx > -1) {
+                segments.splice(idx, 1);
+            }
+        }
+
+        // Update progress
+        if (typeof updateProgress === 'function') {
+            updateProgress();
+        }
+
+        showToast('A segment was merged by another user');
+    });
+
+    socket.on('paragraph_merged_broadcast', (data) => {
+        console.log('Paragraph merged by another user:', data);
+
+        // Remove all deleted segments from DOM
+        data.deleted_segment_ids.forEach(id => {
+            const item = document.getElementById(`seg-item-${id}`);
+            if (item) {
+                item.remove();
+            }
+
+            // Update segments array if available
+            if (typeof segments !== 'undefined') {
+                const idx = segments.indexOf(id);
+                if (idx > -1) {
+                    segments.splice(idx, 1);
+                }
+            }
+        });
+
+        // Update total segments count if available
+        if (typeof segments !== 'undefined' && typeof totalSegments !== 'undefined') {
+            totalSegments = segments.length;
+        }
+
+        // Update progress
+        if (typeof updateProgress === 'function') {
+            updateProgress();
+        }
+
+        showToast('A paragraph was merged by another user');
+    });
+
     // Heartbeat
     setInterval(() => {
         if (socket && socket.connected) {
@@ -254,4 +312,25 @@ function showToast(message) {
     `;
     toastContainer.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
+}
+
+// Emit functions for merge operations
+function emitSegmentMerged(projectId, deletedSegmentId, mergedSegmentId) {
+    if (socket) {
+        socket.emit('segment_merged', {
+            project_id: projectId,
+            deleted_segment_id: deletedSegmentId,
+            merged_segment_id: mergedSegmentId
+        });
+    }
+}
+
+function emitParagraphMerged(projectId, deletedSegmentIds, mergedSegmentId) {
+    if (socket) {
+        socket.emit('paragraph_merged', {
+            project_id: projectId,
+            deleted_segment_ids: deletedSegmentIds,
+            merged_segment_id: mergedSegmentId
+        });
+    }
 }

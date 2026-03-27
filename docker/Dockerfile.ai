@@ -1,0 +1,37 @@
+# AI Translation Worker Dockerfile for AMD ROCm
+#
+# This container runs the background translation worker with GPU support.
+# For AMD GPUs, it uses ROCm and 8-bit quantization via bitsandbytes.
+
+FROM rocm/pytorch:rocm6.0-py3.10-pytorch2.1.2
+
+LABEL maintainer="Glossio Team"
+LABEL description="AI Translation Worker with AMD ROCm support"
+
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY app/services/ ./app/services/
+COPY app/models.py ./app/
+COPY app/extensions.py ./app/
+COPY app/config.py ./app/
+COPY app/__init__.py ./app/
+COPY ai_worker.py .
+
+# Create empty __init__.py for services package
+RUN touch ./app/services/__init__.py
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+ENV HF_HOME=/models
+
+# Health check - verify Redis connectivity
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python3 -c "import redis; r = redis.from_url('${REDIS_URL}'); r.ping()" || exit 1
+
+# Run the worker
+CMD ["python3", "ai_worker.py"]

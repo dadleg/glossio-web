@@ -1,0 +1,88 @@
+# ------------------------------------------------------------------
+# BLOQUE 1: SERVIDOR FRONTAL (FRONTEND)
+# Gestiona el dominio principal y sirve archivos estáticos optimizados.
+# ------------------------------------------------------------------
+server {
+    server_name glossio.dadlegloria.org www.glossio.dadlegloria.org;
+
+    # 1. SERVIR ARCHIVOS ESTÁTICOS (Usando la lógica de tu nuevo archivo 'nginx.conf' y la ruta ABSOLUTA)
+    location /static/ {
+        # La directiva 'alias' o 'root' debe apuntar a la carpeta estática.
+        # Mantendremos 'root' que es más estándar para el bloque principal:
+        root /home/damiangfabio/glossio-web/app; 
+        expires 30d;
+    }
+    
+    # 2. PROXY INVERSO AL SOCKET DEL FRONTEND
+    location / {
+        include proxy_params;
+        # Usamos el socket Unix, más rápido que 127.0.0.1:8000
+        proxy_pass http://unix:/home/damiangfabio/glossio-web/glossio-web.sock;
+
+        # Headers que Jules te envió, son correctos:
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/glossio.dadlegloria.org/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/glossio.dadlegloria.org/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+
+# ------------------------------------------------------------------
+# BLOQUE 2: SERVIDOR API (BACKEND)
+# Gestiona el subdominio de la API.
+# ------------------------------------------------------------------
+server {
+    server_name api.dadlegloria.org;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/damiangfabio/glossio-web/glossio-backend.sock;
+        
+        # Headers que Jules te envió, son correctos:
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        proxy_read_timeout 120s;
+        proxy_connect_timeout 120s;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/glossio.dadlegloria.org/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/glossio.dadlegloria.org/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+server {
+    if ($host = glossio.dadlegloria.org) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    server_name glossio.dadlegloria.org www.glossio.dadlegloria.org;
+    return 404; # managed by Certbot
+
+
+}
+server {
+    if ($host = api.dadlegloria.org) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    server_name api.dadlegloria.org;
+    return 404; # managed by Certbot
+
+
+}

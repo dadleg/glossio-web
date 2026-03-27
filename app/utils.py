@@ -31,53 +31,143 @@ def get_nlp():
 
 class TextUtils:
     BIBLE_BOOK_MAP = {
-        # Antiguo Testamento
-        "génesis": "Genesis", "éxodo": "Exodus", "levítico": "Leviticus", "números": "Numbers",
-        "deuteronomio": "Deuteronomy",
-        "josué": "Joshua", "jueces": "Judges", "rut": "Ruth",
-        "1 samuel": "1 Samuel", "2 samuel": "2 Samuel", "1 reyes": "1 Kings", "2 reyes": "2 Kings",
-        "1 crónicas": "1 Chronicles", "2 crónicas": "2 Chronicles", "esdras": "Ezra", "nehemías": "Nehemiah",
-        "ester": "Esther", "job": "Job", "salmos": "Psalms", "proverbios": "Proverbs", "eclesiastés": "Ecclesiastes",
-        "cantares": "Song of Solomon", "isaías": "Isaiah", "jeremías": "Jeremiah", "lamentaciones": "Lamentations",
-        "ezequiel": "Ezekiel", "daniel": "Daniel", "oseas": "Hosea", "joel": "Joel", "amós": "Amos",
-        "abdías": "Obadiah",
-        "jonás": "Jonah", "miqueas": "Micah", "nahúm": "Nahum", "habacuc": "Habakkuk", "sofonías": "Zephaniah",
-        "hageo": "Haggai", "zacarías": "Zechariah", "malaquías": "Malachi",
+        # Antiguo Testamento (Spanish names & abbreviations)
+        "génesis": "Genesis", "gn": "Genesis", "gen": "Genesis", "gén": "Genesis",
+        "éxodo": "Exodus", "ex": "Exodus", "exo": "Exodus", "éxo": "Exodus",
+        "levítico": "Leviticus", "lv": "Leviticus", "lev": "Leviticus", "leví": "Leviticus",
+        "números": "Numbers", "nm": "Numbers", "num": "Numbers", "núm": "Numbers",
+        "deuteronomio": "Deuteronomy", "dt": "Deuteronomy", "deut": "Deuteronomy",
+        "josué": "Joshua", "jos": "Joshua",
+        "jueces": "Judges", "jue": "Judges",
+        "rut": "Ruth", "rt": "Ruth",
+        "1 samuel": "1 Samuel", "1 s": "1 Samuel", "1 sam": "1 Samuel",
+        "2 samuel": "2 Samuel", "2 s": "2 Samuel", "2 sam": "2 Samuel",
+        "1 reyes": "1 Kings", "1 r": "1 Kings", "1 re": "1 Kings", "1 rey": "1 Kings",
+        "2 reyes": "2 Kings", "2 r": "2 Kings", "2 re": "2 Kings", "2 rey": "2 Kings",
+        "1 crónicas": "1 Chronicles", "1 cr": "1 Chronicles", "1 cro": "1 Chronicles",
+        "2 crónicas": "2 Chronicles", "2 cr": "2 Chronicles", "2 cro": "2 Chronicles",
+        "esdras": "Ezra", "esd": "Ezra",
+        "nehemías": "Nehemiah", "neh": "Nehemiah",
+        "ester": "Esther", "est": "Esther",
+        "job": "Job",
+        "salmos": "Psalms", "sl": "Psalms", "sal": "Psalms", "ps": "Psalms",
+        "proverbios": "Proverbs", "pr": "Proverbs", "prov": "Proverbs",
+        "eclesiastés": "Ecclesiastes", "ec": "Ecclesiastes", "ecl": "Ecclesiastes",
+        "cantares": "Song of Solomon", "cnt": "Song of Solomon", "can": "Song of Solomon",
+        "isaías": "Isaiah", "is": "Isaiah", "isa": "Isaiah",
+        "jeremías": "Jeremiah", "jr": "Jeremiah", "jer": "Jeremiah",
+        "lamentaciones": "Lamentations", "lm": "Lamentations", "lam": "Lamentations",
+        "ezequiel": "Ezekiel", "ez": "Ezekiel", "eze": "Ezekiel",
+        "daniel": "Daniel", "dn": "Daniel", "dan": "Daniel",
+        "oseas": "Hosea", "os": "Hosea",
+        "joel": "Joel", "jl": "Joel",
+        "amós": "Amos", "am": "Amos",
+        "abdías": "Obadiah", "ab": "Obadiah", "abd": "Obadiah",
+        "jonás": "Jonah", "jon": "Jonah",
+        "miqueas": "Micah", "mi": "Micah", "miq": "Micah",
+        "nahúm": "Nahum", "na": "Nahum", "nah": "Nahum",
+        "habacuc": "Habakkuk", "ha": "Habakkuk", "hab": "Habakkuk",
+        "sofonías": "Zephaniah", "so": "Zephaniah", "sof": "Zephaniah",
+        "hageo": "Haggai", "hg": "Haggai", "hag": "Haggai",
+        "zacarías": "Zechariah", "zc": "Zechariah", "zac": "Zechariah",
+        "malaquías": "Malachi", "ml": "Malachi", "mal": "Malachi",
 
         # Nuevo Testamento
-        "mateo": "Matthew", "marcos": "Mark", "lucas": "Luke", "juan": "John", "hechos": "Acts",
-        "romanos": "Romans",
-        "1 corintios": "1 Corinthians", "2 corintios": "2 Corinthians", "gálatas": "Galatians",
-        "efesios": "Ephesians", "filipenses": "Philippians", "colosenses": "Colossians",
-        "1 tesalonicenses": "1 Thessalonians", "2 tesalonicenses": "2 Thessalonians",
-        "1 timoteo": "1 Timothy", "2 timoteo": "2 Timothy", "tito": "Titus", "filemón": "Philemon",
-        "hebreos": "Hebrews", "santiago": "James",
-        "1 pedro": "1 Peter", "2 pedro": "2 Peter",
-        "1 juan": "1 John", "2 juan": "2 John", "3 juan": "3 John",
-        "judas": "Jude", "apocalipsis": "Revelation",
+        "mateo": "Matthew", "mt": "Matthew", "mat": "Matthew",
+        "marcos": "Mark", "mc": "Mark", "mar": "Mark",
+        "lucas": "Luke", "lc": "Luke", "luc": "Luke",
+        "juan": "John", "jn": "John",
+        "hechos": "Acts", "hch": "Acts",
+        "romanos": "Romans", "rm": "Romans", "rom": "Romans",
+        "1 corintios": "1 Corinthians", "1 co": "1 Corinthians", "1 cor": "1 Corinthians",
+        "2 corintios": "2 Corinthians", "2 co": "2 Corinthians", "2 cor": "2 Corinthians",
+        "gálatas": "Galatians", "gl": "Galatians", "gal": "Galatians",
+        "efesios": "Ephesians", "ef": "Ephesians", "efe": "Ephesians",
+        "filipenses": "Philippians", "flp": "Philippians", "fil": "Philippians",
+        "colosenses": "Colossians", "cl": "Colossians", "col": "Colossians",
+        "1 tesalonicenses": "1 Thessalonians", "1 ts": "1 Thessalonians", "1 tes": "1 Thessalonians",
+        "2 tesalonicenses": "2 Thessalonians", "2 ts": "2 Thessalonians", "2 tes": "2 Thessalonians",
+        "1 timoteo": "1 Timothy", "1 tm": "1 Timothy", "1 tim": "1 Timothy",
+        "2 timoteo": "2 Timothy", "2 tm": "2 Timothy", "2 tim": "2 Timothy",
+        "tito": "Titus", "tt": "Titus", "tit": "Titus",
+        "filemón": "Philemon", "flm": "Philemon", "fil": "Philemon",
+        "hebreos": "Hebrews", "hb": "Hebrews", "heb": "Hebrews",
+        "santiago": "James", "stg": "James", "jac": "James", "jas": "James",
+        "1 pedro": "1 Peter", "1 p": "1 Peter", "1 pe": "1 Peter", "1 ped": "1 Peter",
+        "2 pedro": "2 Peter", "2 p": "2 Peter", "2 pe": "2 Peter", "2 ped": "2 Peter",
+        "1 juan": "1 John", "1 jn": "1 John",
+        "2 juan": "2 John", "2 jn": "2 John",
+        "3 juan": "3 John", "3 jn": "3 John",
+        "judas": "Jude", "jd": "Jude", "jud": "Jude",
+        "apocalipsis": "Revelation", "ap": "Apocalipsis", "apo": "Revelation", "rev": "Revelation",
 
-        # English Mappings (to handle casing issues like "Song Of Solomon")
-        "genesis": "Genesis", "exodus": "Exodus", "leviticus": "Leviticus", "numbers": "Numbers",
-        "deuteronomy": "Deuteronomy",
-        "joshua": "Joshua", "judges": "Judges", "ruth": "Ruth",
-        "1 samuel": "1 Samuel", "2 samuel": "2 Samuel", "1 kings": "1 Kings", "2 kings": "2 Kings",
-        "1 chronicles": "1 Chronicles", "2 chronicles": "2 Chronicles", "ezra": "Ezra", "nehemiah": "Nehemiah",
-        "esther": "Esther", "job": "Job", "psalms": "Psalms", "proverbs": "Proverbs", "ecclesiastes": "Ecclesiastes",
-        "song of solomon": "Song of Solomon", "isaiah": "Isaiah", "jeremiah": "Jeremiah", "lamentations": "Lamentations",
-        "ezekiel": "Ezekiel", "daniel": "Daniel", "hosea": "Hosea", "joel": "Joel", "amos": "Amos",
-        "obadiah": "Obadiah",
-        "jonah": "Jonah", "micah": "Micah", "nahum": "Nahum", "habakkuk": "Habakkuk", "zephaniah": "Zephaniah",
-        "haggai": "Haggai", "zechariah": "Zechariah", "malachi": "Malachi",
-        "matthew": "Matthew", "mark": "Mark", "luke": "Luke", "john": "John", "acts": "Acts",
-        "romans": "Romans",
-        "1 corinthians": "1 Corinthians", "2 corinthians": "2 Corinthians", "galatians": "Galatians",
-        "ephesians": "Ephesians", "philippians": "Philippians", "colossians": "Colossians",
-        "1 thessalonians": "1 Thessalonians", "2 thessalonians": "2 Thessalonians",
-        "1 timothy": "1 Timothy", "2 timothy": "2 Timothy", "titus": "Titus", "philemon": "Philemon",
-        "hebrews": "Hebrews", "james": "James",
-        "1 peter": "1 Peter", "2 peter": "2 Peter",
-        "1 john": "1 John", "2 john": "2 John", "3 john": "3 John",
-        "jude": "Jude", "revelation": "Revelation",
+        # English Names & Abbreviations
+        "genesis": "Genesis", "gen": "Genesis",
+        "exodus": "Exodus", "exo": "Exodus",
+        "leviticus": "Leviticus", "lev": "Leviticus",
+        "numbers": "Numbers", "num": "Numbers",
+        "deuteronomy": "Deuteronomy", "deut": "Deuteronomy",
+        "joshua": "Joshua", "josh": "Joshua",
+        "judges": "Judges", "judg": "Judges",
+        "ruth": "Ruth",
+        "1 samuel": "1 Samuel", "1 sam": "1 Samuel",
+        "2 samuel": "2 Samuel", "2 sam": "2 Samuel",
+        "1 kings": "1 Kings",
+        "2 kings": "2 Kings",
+        "1 chronicles": "1 Chronicles", "1 chron": "1 Chronicles",
+        "2 chronicles": "2 Chronicles", "2 chron": "2 Chronicles",
+        "ezra": "Ezra",
+        "nehemiah": "Nehemiah", "neh": "Nehemiah",
+        "esther": "Esther", "esth": "Esther",
+        "job": "Job",
+        "psalms": "Psalms", "ps": "Psalms", "psa": "Psalms",
+        "proverbs": "Proverbs", "prov": "Proverbs",
+        "ecclesiastes": "Ecclesiastes", "eccl": "Ecclesiastes",
+        "song of solomon": "Song of Solomon", "song": "Song of Solomon",
+        "isaiah": "Isaiah", "isa": "Isaiah",
+        "jeremiah": "Jeremiah", "jer": "Jeremiah",
+        "lamentations": "Lamentations", "lam": "Lamentations",
+        "ezekiel": "Ezekiel", "ezek": "Ezekiel",
+        "daniel": "Daniel", "dan": "Daniel",
+        "hosea": "Hosea", "hos": "Hosea",
+        "joel": "Joel",
+        "amos": "Amos",
+        "obadiah": "Obadiah", "obad": "Obadiah",
+        "jonah": "Jonah",
+        "micah": "Micah", "mic": "Micah",
+        "nahum": "Nahum", "nah": "Nahum",
+        "habakkuk": "Habakkuk", "hab": "Habakkuk",
+        "zephaniah": "Zephaniah", "zeph": "Zephaniah",
+        "haggai": "Haggai", "hag": "Haggai",
+        "zechariah": "Zechariah", "zech": "Zechariah",
+        "malachi": "Malachi", "mal": "Malachi",
+        "matthew": "Matthew", "matt": "Matthew",
+        "mark": "Mark",
+        "luke": "Luke",
+        "john": "John",
+        "acts": "Acts",
+        "romans": "Romans", "rom": "Romans",
+        "1 corinthians": "1 Corinthians", "1 cor": "1 Corinthians",
+        "2 corinthians": "2 Corinthians", "2 cor": "2 Corinthians",
+        "galatians": "Galatians", "gal": "Galatians",
+        "ephesians": "Ephesians", "eph": "Ephesians",
+        "philippians": "Philippians", "phil": "Philippians",
+        "colossians": "Colossians", "col": "Colossians",
+        "1 thessalonians": "1 Thessalonians", "1 thess": "1 Thessalonians", "1 thes": "1 Thessalonians",
+        "2 thessalonians": "2 Thessalonians", "2 thess": "2 Thessalonians", "2 thes": "2 Thessalonians",
+        "1 timothy": "1 Timothy", "1 tim": "1 Timothy",
+        "2 timothy": "2 Timothy", "2 tim": "2 Timothy",
+        "titus": "Titus", "tit": "Titus",
+        "philemon": "Philemon", "philem": "Philemon",
+        "hebrews": "Hebrews", "heb": "Hebrews",
+        "james": "James", "jas": "James",
+        "1 peter": "1 Peter", "1 pet": "1 Peter",
+        "2 peter": "2 Peter", "2 pet": "2 Peter",
+        "1 john": "1 John", "1 jn": "1 John",
+        "2 john": "2 John", "2 jn": "2 John",
+        "3 john": "3 John", "3 jn": "3 John",
+        "jude": "Jude",
+        "revelation": "Revelation", "rev": "Revelation",
     }
     
     # Map for Bolls.life API (Integer IDs 1-66)
@@ -138,57 +228,59 @@ class TextUtils:
     @staticmethod
     def get_bible_url(text):
         if not text: return None
-        regex = r'(?:[\(\[]?)(\d?\s*[A-Za-zñáéíóúÁÉÍÓÚ\s\.]+\s+\d+:\d+(?:-\d+)?(?:(?:\s*,\s*|;\s*|\s+y\s+)\s*(?:\d?\s*[A-Za-zñáéíóúÁÉÍÓÚ\s\.]+\s+)?\d+:\d+(?:-\d+)?)*)(?:[\)\]]?)'
-        match = re.search(regex, text.strip(), re.I)
-        if match:
-            citation_string = match.group(1).strip()
-            citation_string = re.sub(r'^[\(\[]|[\)\]]$', '', citation_string).strip()
-            temp_string = re.sub(r'(?:,\s*|;\s*|\s+y\s+)', ';', citation_string)
-            translated_query_parts = []
-            citation_parts_regex = r'(\d?\s*[A-Za-zñáéíóúÁÉÍÓÚ\s\.]*)\s*(\d+:\d+(?:-\d+)?)'
-            parts = [p.strip() for p in temp_string.split(';') if p.strip()]
-            for part in parts:
-                match_part = re.search(citation_parts_regex, part.strip(), re.I)
-                if match_part:
-                    book_raw = match_part.group(1).strip().lower()
-                    reference = match_part.group(2).strip()
-                    book_clean = re.sub(r'\.', '', book_raw).strip()
-                    book_en = TextUtils.BIBLE_BOOK_MAP.get(book_clean, book_clean.title())
-                    translated_query_parts.append(f"{book_en} {reference}")
-            query = ";".join(translated_query_parts)
-            if not query: return None
-            query = query.replace(':', '%3A').replace(' ', '%20')
-            BASE_URL = "https://www.biblegateway.com/passage/?search="
-            VERSION = "&version=RVR1960"
+        
+        # New regex: supports abbreviations, optional dots, flexible spacing, and complex verse strings
+        # Groups: 1: opt leading number, 2: book name, 3: chapter, 4: verses (range/list)
+        regex = r'\b(?:([1-3]\s*)?([A-Z][a-zñáéíóúÁÉÍÓÚ]*)\.?\s*)(\d+):([\d\s\-,]+)'
+        
+        matches = list(re.finditer(regex, text, re.I))
+        if not matches:
+            return None
+        
+        # Filter matches to only include valid bible books
+        valid_match = None
+        book_en = None
+        for match in matches:
+            book_raw = (match.group(1) or "") + match.group(2)
+            book_clean = book_raw.strip().lower()
             
-            # API Data for first citation found
-            # match.group(1) is "Genesis 1:1" roughly.
-            # We need to parse the first translated query part.
-            api_data = None
-            if translated_query_parts:
-                first_part = translated_query_parts[0] # "Genesis 1:1"
-                # Regex to split Book and Ref
-                m_api = re.match(r'(.+?)\s+(\d+):(\d+)(?:-\d+)?', first_part)
-                if m_api:
-                    book_en = m_api.group(1).strip()
-                    chapter = m_api.group(2)
-                    verse = m_api.group(3)
-                    # Get Bolls ID (Int)
-                    book_id = TextUtils.BIBLE_BOOK_IDS.get(book_en)
-                    if book_id:
-                        api_data = {
-                            "book_id": book_id,
-                            "chapter": chapter,
-                            "verse": verse
-                        }
-
-            return {
-                "en": f"{BASE_URL}{query}{VERSION}", 
-                "type": "bible",
-                "api_data": api_data,
-                "match": citation_string
+            # Check if it's a valid book name/abbreviation
+            if book_clean in TextUtils.BIBLE_BOOK_MAP:
+                book_en = TextUtils.BIBLE_BOOK_MAP[book_clean]
+                valid_match = match
+                break
+        
+        if not valid_match:
+            return None
+        
+        # Process the valid match
+        citation_string = valid_match.group(0).strip()
+        chapter = valid_match.group(3)
+        verse_str = valid_match.group(4).strip()
+        
+        # Build URL query for BibleGateway
+        url_ref = f"{chapter}:{verse_str}".replace(' ', '').replace(',', '%2C').replace(':', '%3A')
+        query = f"{book_en}%20{url_ref}"
+        
+        BASE_URL = "https://www.biblegateway.com/passage/?search="
+        VERSION = "&version=RVR1960"
+        
+        # API Data for first citation found
+        book_id = TextUtils.BIBLE_BOOK_IDS.get(book_en)
+        api_data = None
+        if book_id:
+            api_data = {
+                "book_id": book_id,
+                "chapter": chapter,
+                "verse": verse_str # Pass the full verse string to frontend
             }
-        return None
+
+        return {
+            "en": f"{BASE_URL}{query}{VERSION}", 
+            "type": "bible",
+            "api_data": api_data,
+            "match": citation_string
+        }
 
     @staticmethod
     def get_egw_url(text, lang_code="EN"):
@@ -197,75 +289,79 @@ class TextUtils:
         Supported formats:
         - Christian Education, 21.1
         - CE 21.1
-        - Christian Education, p. 21.1
-        - (Christian Education, p. 21.1)
-        - {Christian Education, p. 21.1}
+        - The Desire of Ages, p. 214.1
+        - (Desire of Ages, p. 214.1)
+        - {DA 214.1}
         """
         if not text: return {"en": None, "type": "none"}
         
         # Load abbreviations for the specified language
         abbrevs = TextUtils.load_abbreviations(lang_code)
+        if not abbrevs:
+            return {"en": None, "type": "none"}
 
         BASE_URL_EN = "https://m.egwwritings.org/en/search?query="
         GOOGLE_URL = "https://www.google.com/search?q="
         
-        query_en = None
-        is_google_fallback = False
+        # Priority 1: Look for abbreviated format: DA 214.1, CE 21.1, 1MCP 23.4
+        abbr_regex = r'\b([1-9]?[A-Z][A-Za-z]{1,5})\s+(\d+\.\d+)\b'
+        abbr_match = re.search(abbr_regex, text)
+        if abbr_match:
+            abbr = abbr_match.group(1)
+            ref = abbr_match.group(2)
+            # Check if this abbreviation exists
+            if abbr in abbrevs.values():
+                query = f"{abbr}+{ref}"
+                return {"en": f"{BASE_URL_EN}{query}", "type": "egw", "match": abbr_match.group(0)}
 
-        # 1. Check for already abbreviated format { CE 21.1 } or CE 21.1
-        # Ref must be digits.digits (mandatory dot) to match user req: [ABBR] [00].[0]
-        # Regex to catch: (Abbr) (Ref)
+        # Priority 2: Look for page reference pattern and search backwards for title
+        # Matches: digits.digits format like 214.1
+        page_regex = r'(\d+\.\d+)'
+        page_matches = list(re.finditer(page_regex, text))
         
-        # Strip surrounding parens/braces first
-        # Improved: Remove [Tag] or (Tag) at the start, and any surrounding brackets
-        clean_text = re.sub(r'^\[.*?\]\s*', '', text.strip())
-        clean_text = re.sub(r'^\(.*? \)\s*', '', clean_text)
-        clean_text = re.sub(r'^[\(\[\{]|[\)\]\}]$', '', clean_text).strip()
-        
-        # Regex for Title + Ref (Ref must be digits.digits)
-        # Handles: "Title, p. 12.3", "Title 12.3", "(Title, 12.3)", "Title Vol. 2, p. 12.3"
-        # Improved: Uses [A-Z] to find start of title to avoid matching long preceding text.
-        # Captures: (Title) (Ref)
-        # Updated to handle "Vol. 2, p. 214.1" correctly by allowing more flexible separators and content before the ref
-        regex_full = r'([A-Z].+?)(?:,\s*|\s+)(?:p\.|pp\.|page|vol\.\s*\d+(?:,\s*p\.)?)?\s*(\d+(?:\:\d+)?\.\d+)'
-        match_full = re.search(regex_full, clean_text)
-
-        # Try finding exact abbreviation first (most specific)
-        # Iterate words? No, regex with lookahead?
-        # Let's try simple regex for Abbr+Ref first, check if valid.
-        match_simple = re.search(r'\b([1-9]?[A-Z][A-Za-z]*)\s+(\d+\.\d+)', clean_text)
-        if match_simple:
-            book = match_simple.group(1)
-            ref = match_simple.group(2)
-            if book in abbrevs.values():
-                query_en = f"{book}+{ref}"
-                return {"en": f"{BASE_URL_EN}{query_en}", "type": "egw", "match": match_simple.group(0)}
-
-        # If not simple abbr, try Full Title regex
-        if match_full:
-            raw_title = match_full.group(1).strip()
-            ref = match_full.group(2)
-            match_str = match_full.group(0)
+        for page_match in page_matches:
+            ref = page_match.group(1)
+            # Look backwards from page ref for title
+            prefix = text[:page_match.start()]
             
-            # Check in abbreviations (Full Title -> Abbr)
-            if raw_title in abbrevs:
-                abbr = abbrevs[raw_title]
-                query_en = f"{abbr}+{ref}"
-            elif raw_title in abbrevs.values():
-                 # Should have been caught above, but maybe spacing diff
-                 query_en = f"{raw_title}+{ref}"
-            else:
-                # Fallback to Google
-                is_google_fallback = True
+            # Try to find a title pattern: "Title, p." or "Title,"
+            title_regex = r'([A-Z][A-Za-z\s\']+?)(?:,\s*(?:p\.?\s*)?|,?\s+(?:p\.?\s*)?)$'
+            title_match = re.search(title_regex, prefix)
+            
+            if title_match:
+                raw_title = title_match.group(1).strip()
+                full_match_str = raw_title + text[title_match.end():page_match.end()]
+                
+                # Try to find this title in abbreviations
+                # Check exact match first
+                if raw_title in abbrevs:
+                    abbr = abbrevs[raw_title]
+                    query = f"{abbr}+{ref}"
+                    return {"en": f"{BASE_URL_EN}{query}", "type": "egw", "match": full_match_str.strip()}
+                
+                # Check if it's already an abbreviation
+                if raw_title in abbrevs.values():
+                    query = f"{raw_title}+{ref}"
+                    return {"en": f"{BASE_URL_EN}{query}", "type": "egw", "match": full_match_str.strip()}
+                
+                # Try partial match - maybe missing "The" prefix
+                for full_title, abbr in abbrevs.items():
+                    # Check if raw_title is at the end of full_title (e.g., "Desire of Ages" in "The Desire of Ages")
+                    if full_title.endswith(raw_title) or raw_title == full_title:
+                        query = f"{abbr}+{ref}"
+                        return {"en": f"{BASE_URL_EN}{query}", "type": "egw", "match": full_match_str.strip()}
+                    # Also try case-insensitive
+                    if full_title.lower().endswith(raw_title.lower()):
+                        query = f"{abbr}+{ref}"
+                        return {"en": f"{BASE_URL_EN}{query}", "type": "egw", "match": full_match_str.strip()}
+                
+                # Fallback to Google search
                 clean_title = raw_title.replace(" ", "+")
-                query_en = f"{clean_title}+{ref}+Ellen+White"
-        
-            if is_google_fallback and query_en:
-                return {"en": f"{GOOGLE_URL}{query_en}", "type": "google", "match": match_str}
-            elif query_en:
-                return {"en": f"{BASE_URL_EN}{query_en}", "type": "egw", "match": match_str}
+                query = f"{clean_title}+{ref}+Ellen+White"
+                return {"en": f"{GOOGLE_URL}{query}", "type": "google", "match": full_match_str.strip()}
 
         return {"en": None, "type": "none"}
+
 
     @staticmethod
     def get_mt_translation(text, target_lang="ES", api_key=None):

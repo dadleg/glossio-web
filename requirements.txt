@@ -9,3 +9,9 @@ spacy==3.7.2
 requests==2.31.0
 python-dotenv==1.0.0
 firebase-admin==6.2.0
+transformers>=4.46.0
+accelerate>=0.26.0
+bitsandbytes>=0.41.0
+huggingface_hub>=0.20.0
+redis>=5.0.0
+protobuf

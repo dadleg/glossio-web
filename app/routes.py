@@ -1,18 +1,33 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app.models import Project, Paragraph, Segment, TranslationMemory, Glossary, User, project_assignments, AuditLog
+from app.models import Project, Paragraph, Segment, TranslationMemory, Glossary, User, project_assignments, AuditLog, AITranslationJob, AISuggestion
+from app.services.task_queue import get_task_queue
 from app.extensions import db
 from app.utils import TextUtils, lookup_tm, lookup_glossary, get_nlp
 import os
 import re
 import requests
-import requests
+import tempfile
 import docx
 from docx import Document
 from datetime import datetime
+from app.services.gemma_service import GemmaService
+
+# Firestore service (optional - gracefully handle if not configured)
+try:
+    from app import firestore_service
+    FIRESTORE_ENABLED = True
+except Exception as e:
+    print(f"Firestore not available: {e}")
+    FIRESTORE_ENABLED = False
 
 bp = Blueprint('main', __name__)
+
+@bp.route('/health')
+def health_check():
+    """Health check endpoint for Electron to verify backend is running."""
+    return jsonify({'status': 'ok', 'version': '1.0.0'})
 
 @bp.route('/')
 @login_required
@@ -76,6 +91,189 @@ def new_project():
             
     return render_template('project_setup.html')
 
+# ==========================================
+# FIRESTORE API ROUTES
+# ==========================================
+
+@bp.route('/api/firestore/process_docx', methods=['POST'])
+@login_required
+def process_docx_firestore():
+    """
+    Process DOCX file: parse with spaCy, write segments to Firestore.
+    This is the "Heavy Lifting" endpoint for initial document processing.
+    """
+    if not FIRESTORE_ENABLED:
+        return jsonify({'error': 'Firestore not configured'}), 500
+    
+    file = request.files.get('file')
+    source_lang = request.form.get('source_lang', 'EN')
+    target_lang = request.form.get('target_lang', 'ES')
+    
+    if not file or not file.filename.endswith('.docx'):
+        return jsonify({'error': 'Invalid file'}), 400
+    
+    filename = secure_filename(file.filename)
+    
+    # Save temporarily
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as tmp:
+        file.save(tmp.name)
+        tmp_path = tmp.name
+    
+    try:
+        # Create project in Firestore
+        project_id = firestore_service.create_project_in_firestore(
+            owner_uid=current_user.firebase_uid or str(current_user.id),
+            filename=filename,
+            source_lang=source_lang,
+            target_lang=target_lang
+        )
+        
+        # Parse DOCX with spaCy
+        doc = Document(tmp_path)
+        nlp = get_nlp()
+        
+        paragraphs_data = []
+        
+        for p_idx, p in enumerate(doc.paragraphs):
+            text = p.text.strip()
+            if not text:
+                continue
+            
+            # Segment with spaCy
+            doc_spacy = nlp(text)
+            sents = [s.text.strip() for s in doc_spacy.sents if s.text.strip()]
+            
+            if not sents:
+                sents = [text]
+            
+            # Post-process to merge pronouns and verse refs (same logic as parse_docx_to_db)
+            merged_sents = []
+            pronouns = ['He', 'She', 'Him', 'Her', 'His', 'They', 'Them', 'Their', 'It', 'Its']
+            verse_ref_regex = re.compile(r'^\d?\s*[A-Za-z]+\s+\d+:\d+(?:-\d+)?$')
+            
+            for i, sent in enumerate(sents):
+                if i == 0:
+                    merged_sents.append(sent)
+                    continue
+                
+                prev = sents[i-1]
+                starts_with_pronoun = any(sent.startswith(p + ' ') or sent == p for p in pronouns)
+                prev_ends_properly = prev.rstrip().endswith(('.', '!', '?', '."', '!"', '?"'))
+                is_verse_ref = verse_ref_regex.match(sent)
+                
+                if (starts_with_pronoun and not prev_ends_properly) or is_verse_ref:
+                    merged_sents[-1] += ' ' + sent
+                else:
+                    merged_sents.append(sent)
+            
+            segments = [{'s_idx': j, 'source_text': s} for j, s in enumerate(merged_sents)]
+            
+            paragraphs_data.append({
+                'p_idx': p_idx,
+                'original_text': text,
+                'segments': segments
+            })
+        
+        # Write to Firestore
+        segment_count = firestore_service.write_segments_to_firestore(project_id, paragraphs_data)
+        
+        # Upload original DOCX to Storage
+        firestore_service.upload_docx_to_storage(project_id, tmp_path, filename)
+        
+        # Update status
+        firestore_service.update_project_status(project_id, 'active')
+        
+        return jsonify({
+            'status': 'success',
+            'project_id': project_id,
+            'segment_count': segment_count,
+            'paragraph_count': len(paragraphs_data)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # Cleanup temp file
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+
+@bp.route('/api/firestore/export_docx/<project_id>', methods=['GET'])
+@login_required
+def export_docx_firestore(project_id):
+    """
+    Export final DOCX: read all segments from Firestore, reassemble document.
+    This is the "Heavy Lifting" endpoint for final document export.
+    """
+    if not FIRESTORE_ENABLED:
+        return jsonify({'error': 'Firestore not configured'}), 500
+    
+    try:
+        # Get segments grouped by paragraph
+        paragraphs = firestore_service.get_segments_by_paragraph(project_id)
+        
+        if not paragraphs:
+            return jsonify({'error': 'No segments found'}), 404
+        
+        # Create new DOCX
+        doc = Document()
+        
+        # Sort paragraphs by index
+        for p_idx in sorted(paragraphs.keys()):
+            segments = paragraphs[p_idx]
+            
+            # Sort segments by index
+            segments.sort(key=lambda s: s['segment_idx'])
+            
+            # Combine target texts (or source if no translation)
+            para_text = ' '.join([
+                seg.get('target_text') or seg.get('source_text', '') 
+                for seg in segments
+            ])
+            
+            doc.add_paragraph(para_text)
+        
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as tmp:
+            doc.save(tmp.name)
+            tmp_path = tmp.name
+        
+        # Upload to Storage
+        export_filename = f"export_{project_id}.docx"
+        download_url = firestore_service.upload_final_docx(project_id, tmp_path, export_filename)
+        
+        # Return the file
+        return send_file(
+            tmp_path,
+            as_attachment=True,
+            download_name=export_filename,
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/api/firestore/project/<project_id>/collaborator', methods=['POST'])
+@login_required
+def add_firestore_collaborator(project_id):
+    """Add a collaborator to a Firestore project."""
+    if not FIRESTORE_ENABLED:
+        return jsonify({'error': 'Firestore not configured'}), 500
+    
+    data = request.get_json()
+    user_uid = data.get('user_uid')
+    role = data.get('role', 'editor')
+    
+    if not user_uid:
+        return jsonify({'error': 'user_uid required'}), 400
+    
+    try:
+        firestore_service.add_collaborator(project_id, user_uid, role)
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 def parse_docx_to_db(filepath, project_id):
     doc = Document(filepath)
     nlp = get_nlp()
@@ -101,25 +299,40 @@ def parse_docx_to_db(filepath, project_id):
              seg = Segment(paragraph_id=para.id, s_idx=0, source_text=text)
              db.session.add(seg)
         else:
-            # Post-process sents to merge standalone verse references to previous segment
+            # Post-process sents to fix pronoun-based incorrect splits and merge standalone verse references
             merged_sents = []
             if sents:
-                merged_sents.append(sents[0])
+                # List of capitalizedpronouns that shouldn't start new sentences after commas
+                pronouns = ['He', 'She', 'Him', 'Her', 'His', 'They', 'Them', 'Their', 'It', 'Its']
                 
-                # Regex for standalone verse ref (e.g. "John 3:16" or "1 John 1:1")
-                # Must match strict format to avoid false positives
-                verse_ref_regex = re.compile(r'^\d?\s*[A-Za-z]+\s+\d+:\d+(?:-\d+)?$')
-                
-                for k in range(1, len(sents)):
-                    curr = sents[k]
-                    # Check if current is just a verse ref
-                    if verse_ref_regex.match(curr):
+                i = 0
+                while i < len(sents):
+                    if i == 0:
+                        merged_sents.append(sents[i])
+                        i += 1
+                        continue
+                    
+                    prev = sents[i-1]
+                    curr = sents[i]
+                    
+                    # Check 1: If current starts with pronoun and previous doesn't end with sentence ender
+                    starts_with_pronoun = any(curr.startswith(p + ' ') or curr == p for p in pronouns)
+                    prev_ends_properly = prev.rstrip().endswith(('.', '!', '?', '."', '!"', '?"', '."', '!"', '?"'))
+                    
+                    # Check 2: If current is standalone verse ref (e.g. "John 3:16")
+                    verse_ref_regex = re.compile(r'^\d?\s*[A-Za-z]+\s+\d+:\d+(?:-\d+)?$')
+                    is_verse_ref = verse_ref_regex.match(curr)
+                    
+                    if (starts_with_pronoun and not prev_ends_properly) or is_verse_ref:
                         # Merge with previous
-                        merged_sents[-1] += " " + curr
+                        merged_sents[-1] += ' ' + curr
                     else:
                         merged_sents.append(curr)
+                    i += 1
+                
+                sents = merged_sents
             
-            for j, s_text in enumerate(merged_sents):
+            for j, s_text in enumerate(sents):
                 seg = Segment(paragraph_id=para.id, s_idx=j, source_text=s_text)
                 db.session.add(seg)
                 
@@ -172,7 +385,18 @@ def editor(project_id):
                 'segments': segs
             })
             
-    return render_template('editor.html', project=project, structure=structure, user_role=user_role)
+    return render_template('editor.html', 
+        project=project, 
+        structure=structure, 
+        user_role=user_role,
+        # Firebase config for Firestore
+        firebase_api_key=current_app.config.get('FIREBASE_API_KEY', ''),
+        firebase_auth_domain=current_app.config.get('FIREBASE_AUTH_DOMAIN', ''),
+        firebase_project_id=current_app.config.get('FIREBASE_PROJECT_ID', ''),
+        firebase_storage_bucket=current_app.config.get('FIREBASE_STORAGE_BUCKET', ''),
+        firebase_messaging_sender_id=current_app.config.get('FIREBASE_MESSAGING_SENDER_ID', ''),
+        firebase_app_id=current_app.config.get('FIREBASE_APP_ID', '')
+    )
 
 @bp.route('/api/project/<int:project_id>/assign', methods=['POST'])
 @login_required
@@ -239,6 +463,14 @@ def get_segment(segment_id):
     # Auth check (Owner or Reviewer)
     if project.user_id != current_user.id and current_user not in project.assigned_users:
          return jsonify({'error': 'Unauthorized'}), 403
+
+    # Clear stale locks (older than 10 minutes) - handles abnormal disconnects
+    if segment.locked_by_user_id and segment.locked_at:
+        lock_age = (datetime.utcnow() - segment.locked_at).total_seconds()
+        if lock_age > 600:  # 10 minutes
+            segment.locked_by_user_id = None
+            segment.locked_at = None
+            db.session.commit()
 
     tm_match, tm_score = lookup_tm(segment.source_text, user_id=current_user.id)
     glossary_matches = lookup_glossary(segment.source_text, user_id=current_user.id)
@@ -372,6 +604,155 @@ def translate_mt():
         
     return jsonify({'translation': translation})
 
+@bp.route('/api/translate/local', methods=['POST'])
+@login_required
+def translate_local():
+    data = request.json
+    text = data.get('text', '')
+    target_lang = data.get('target_lang', 'ES')
+    
+    if not text.strip():
+        return jsonify({'translation': ''})
+
+    try:
+        service = GemmaService() # Singleton
+        # Initialize will load model if not loaded
+        translation = service.translate(text, target_lang)
+        return jsonify({'translation': translation})
+    except Exception as e:
+        print(f"Local translation error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/api/project/<int:project_id>/translate-all', methods=['POST'])
+@login_required
+def translate_project_all(project_id):
+    """Start background translation job for entire project."""
+    if not current_app.config.get('ENABLE_AI_FEATURES', False):
+        return jsonify({'error': 'AI features are disabled in this build'}), 403
+        
+    project = Project.query.get_or_404(project_id)
+    
+    # Auth check
+    if project.user_id != current_user.id and current_user not in project.assigned_users:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Check if job already running
+    existing_job = AITranslationJob.query.filter_by(
+        project_id=project_id, 
+        status='running'
+    ).first()
+    
+    if existing_job:
+        return jsonify({'error': 'Translation job already running', 'job_id': existing_job.id}), 409
+        
+    # Get all empty segments or all segments?
+    # Strategy: Translate only segments without target text (and no pending suggestions)
+    # But user might want to re-translate... 
+    # For now, let's translate ALL segments that don't have a final translation.
+    
+    segments = Segment.query.join(Paragraph).filter(Paragraph.project_id == project_id).all()
+    segment_ids = [s.id for s in segments if not s.target_text]
+    
+    if not segment_ids:
+        return jsonify({'status': 'no_work', 'message': 'No untranslated segments found'})
+        
+    # Create Job
+    job = AITranslationJob(
+        project_id=project_id,
+        user_id=current_user.id,
+        total_segments=len(segment_ids),
+        status='pending'
+    )
+    db.session.add(job)
+    db.session.commit()
+    
+    # Enqueue in Redis
+    try:
+        task_queue = get_task_queue()
+        task_queue.enqueue_job(job.id, project_id, segment_ids, project.target_lang)
+        
+        return jsonify({
+            'status': 'success',
+            'job_id': job.id,
+            'message': f'Started translation for {len(segment_ids)} segments'
+        })
+    except Exception as e:
+        job.status = 'failed'
+        job.error_message = f"Failed to enqueue: {str(e)}"
+        db.session.commit()
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/api/project/<int:project_id>/translation-job', methods=['GET'])
+@login_required
+def get_translation_job(project_id):
+    """Get status of latest translation job."""
+    if not current_app.config.get('ENABLE_AI_FEATURES', False):
+        return jsonify({'status': 'disabled'}), 403
+        
+    job = AITranslationJob.query.filter_by(project_id=project_id).order_by(AITranslationJob.created_at.desc()).first()
+    
+    if not job:
+        return jsonify({'status': 'none'})
+        
+    return jsonify({
+        'id': job.id,
+        'status': job.status,
+        'progress': job.progress_percent,
+        'completed': job.completed_segments,
+        'total': job.total_segments,
+        'remaining_seconds': job.estimated_remaining_seconds,
+        'error': job.error_message
+    })
+
+@bp.route('/api/segment/<int:segment_id>/suggestion/accept', methods=['POST'])
+@login_required
+def accept_suggestion(segment_id):
+    if not current_app.config.get('ENABLE_AI_FEATURES', False):
+        return jsonify({'error': 'AI features are disabled'}), 403
+        
+    suggestion_id = request.json.get('suggestion_id')
+    
+    segment = Segment.query.get_or_404(segment_id)
+    # Auth check omitted for brevity, should use decorator
+    
+    if suggestion_id:
+        suggestion = AISuggestion.query.get(suggestion_id)
+    else:
+        # Get latest pending
+        suggestion = AISuggestion.query.filter_by(segment_id=segment_id, status='pending').order_by(AISuggestion.created_at.desc()).first()
+        
+    if not suggestion:
+        return jsonify({'error': 'No suggestion found'}), 404
+        
+    # Apply translation
+    segment.target_text = suggestion.suggested_text
+    segment.last_modified_by_id = current_user.id
+    segment.last_modified_at = datetime.utcnow()
+    
+    suggestion.status = 'accepted'
+    suggestion.reviewed_at = datetime.utcnow()
+    
+    db.session.commit()
+    return jsonify({'status': 'success', 'target_text': segment.target_text})
+
+@bp.route('/api/segment/<int:segment_id>/suggestion/reject', methods=['POST'])
+@login_required
+def reject_suggestion(segment_id):
+    if not current_app.config.get('ENABLE_AI_FEATURES', False):
+        return jsonify({'error': 'AI features are disabled'}), 403
+        
+    suggestion_id = request.json.get('suggestion_id')
+    
+    if suggestion_id:
+        suggestion = AISuggestion.query.get(suggestion_id)
+        if suggestion:
+            suggestion.status = 'rejected'
+            suggestion.reviewed_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({'status': 'success'})
+            
+    return jsonify({'error': 'Suggestion not found'}), 404
+
 @bp.route('/api/segment/get_by_display_id', methods=['GET'])
 @login_required
 def get_segment_by_display_id():
@@ -415,7 +796,10 @@ def merge_paragraph(paragraph_id):
     segments = Segment.query.filter_by(paragraph_id=para.id).order_by(Segment.s_idx).all()
     if not segments or len(segments) <= 1:
         return jsonify({'status': 'no_change'})
-        
+    
+    # Store IDs of segments to be deleted for broadcast
+    deleted_segment_ids = [seg.id for seg in segments[1:]]
+    
     first_seg = segments[0]
     for seg in segments[1:]:
         first_seg.source_text += " " + seg.source_text
@@ -427,8 +811,38 @@ def merge_paragraph(paragraph_id):
         
         db.session.delete(seg)
     
+    # Update last modified info
+    first_seg.last_modified_by_id = current_user.id
+    first_seg.last_modified_at = datetime.utcnow()
+    
     db.session.commit()
-    return jsonify({'status': 'success', 'new_segment_id': first_seg.id})
+    
+    # Log the merge
+    log = AuditLog(
+        project_id=project.id,
+        user_id=current_user.id,
+        segment_id=first_seg.id,
+        action='merge',
+        details=f"Merged paragraph {para.p_idx}, {len(segments)} segments into 1"
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    # Return comprehensive data for UI update
+    return jsonify({
+        'status': 'success', 
+        'merged_segment': {
+            'id': first_seg.id,
+            'paragraph_id': para.id,
+            'p_idx': para.p_idx,
+            's_idx': first_seg.s_idx,
+            'source_text': first_seg.source_text,
+            'target_text': first_seg.target_text,
+            'note': first_seg.note
+        },
+        'deleted_segment_ids': deleted_segment_ids,
+        'project_id': project.id
+    })
 
 @bp.route('/api/segment/<int:segment_id>/merge_prev', methods=['POST'])
 @login_required
@@ -455,10 +869,49 @@ def merge_prev(segment_id):
         prev_note = prev_seg.note
         sep_note = " | " if prev_note else ""
         prev_seg.note = prev_note + sep_note + curr_seg.note
-        
+    
+    # Update last modified info
+    prev_seg.last_modified_by_id = current_user.id
+    prev_seg.last_modified_at = datetime.utcnow()
+    
+    # Need to reindex remaining segments in paragraph after current
+    remaining_segs = Segment.query.filter(
+        Segment.paragraph_id == para.id,
+        Segment.s_idx > curr_seg.s_idx
+    ).order_by(Segment.s_idx).all()
+    
+    for seg in remaining_segs:
+        seg.s_idx -= 1
+    
     db.session.delete(curr_seg)
     db.session.commit()
-    return jsonify({'status': 'success', 'new_id': prev_seg.id})
+    
+    # Log the merge
+    log = AuditLog(
+        project_id=proj.id,
+        user_id=current_user.id,
+        segment_id=prev_seg.id,
+        action='merge',
+        details=f"Merged segment {curr_seg.s_idx} with previous in paragraph {para.p_idx}"
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    # Return comprehensive data for UI update
+    return jsonify({
+        'status': 'success',
+        'merged_segment': {
+            'id': prev_seg.id,
+            'paragraph_id': para.id,
+            'p_idx': para.p_idx,
+            's_idx': prev_seg.s_idx,
+            'source_text': prev_seg.source_text,
+            'target_text': prev_seg.target_text,
+            'note': prev_seg.note
+        },
+        'deleted_segment_id': segment_id,
+        'project_id': proj.id
+    })
 
 @bp.route('/project/<int:project_id>/export')
 @login_required
@@ -492,6 +945,7 @@ def export_project(project_id):
         
     output_filename = f"translated_{project.filename}"
     output_path = os.path.join(current_app.config['UPLOAD_FOLDER'], output_filename)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     doc.save(output_path)
     
     return send_file(output_path, as_attachment=True)

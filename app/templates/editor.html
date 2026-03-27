@@ -60,6 +60,53 @@
         align-items: center;
         margin-right: 8px;
     }
+
+    /* AI Suggestion Styles */
+    .ai-suggestion-card {
+        background-color: #f8f9fa;
+        border: 1px dashed #6f42c1;
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 15px;
+        position: relative;
+    }
+
+    .ai-suggestion-badge {
+        position: absolute;
+        top: -10px;
+        right: 15px;
+        background-color: #6f42c1;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .ai-suggestion-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        justify-content: flex-end;
+    }
+
+    /* Job Progress Styles */
+    .ai-job-status {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        width: 300px;
+        display: none;
+        /* Hidden by default */
+        border: 1px solid #e9ecef;
+    }
 </style>
 <div class="editor-container">
     <div class="sidebar">
@@ -101,6 +148,12 @@
             <button class="btn btn-outline-success btn-icon btn-sm" onclick="requestMT()" title="Translate MT">
                 <i data-lucide="bot"></i>
             </button>
+            {% if ENABLE_AI_FEATURES %}
+            <button class="btn btn-outline-primary btn-icon btn-sm" onclick="startBatchTranslation()"
+                title="Translate All (AI)">
+                <i data-lucide="zap"></i>
+            </button>
+            {% endif %}
             <button class="btn btn-outline-danger btn-icon btn-sm" onclick="mergePrev()"
                 title="Merge with Previous (Ctrl+J)">
                 <i data-lucide="merge"></i>
@@ -139,7 +192,8 @@
         <div class="work-area">
             <div id="context-panel" class="context-panel show">
                 <strong>Context:</strong> <span id="context-text"></span>
-                <button class="btn btn-sm btn-link p-0 ms-2" onclick="mergeParagraph()" title="Merge full paragraph">
+                <button id="merge-paragraph-btn" class="btn btn-sm btn-link p-0 ms-2" onclick="mergeParagraph()"
+                    title="Merge full paragraph">
                     (Edit Full Paragraph)
                 </button>
             </div>
@@ -155,6 +209,13 @@
                     placeholder="Type translation here..."></textarea>
                 <div id="last-modified-log" class="text-muted fst-italic mt-1"
                     style="font-size: 0.85em; min-height: 1.2em;"></div>
+
+                {% if ENABLE_AI_FEATURES %}
+                <!-- AI Suggestion Container - Dynamically populated -->
+                <div id="ai-suggestion-container" style="display: none;">
+                    <!-- Template for suggestion card -->
+                </div>
+                {% endif %}
             </div>
 
             <div id="notes-container" class="notes-container show">
@@ -220,13 +281,46 @@
         </div>
     </div>
 </div>
+</div>
+
+{% if ENABLE_AI_FEATURES %}
+<!-- AI Job Status Indicator -->
+<div id="ai-job-status" class="ai-job-status">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong style="color: #6f42c1;"><i data-lucide="sparkles" style="width: 16px;"></i> AI Translating...</strong>
+        <small id="ai-job-eta" class="text-muted">Calculating...</small>
+    </div>
+    <div class="progress" style="height: 6px;">
+        <div id="ai-job-bar" class="progress-bar bg-primary" role="progressbar"
+            style="width: 0%; background-color: #6f42c1 !important;"></div>
+    </div>
+    <div class="d-flex justify-content-between mt-1">
+        <small id="ai-job-count" class="text-muted">0/0 segments</small>
+        <!-- <small><a href="#" class="text-danger text-decoration-none">Cancel</a></small> -->
+    </div>
+</div>
+{% endif %}
 
 <script>
     window.GLOSSIO_CONFIG = {
         targetLang: "{{ project.target_lang }}",
         projectId: "{{ project.id }}",
         userId: {{ current_user.id }},
-    segments: []
+    userUid: "{{ current_user.firebase_uid or current_user.id }}",
+        userName: "{{ current_user.name or current_user.email }}",
+        enableAiFeatures: {{ ENABLE_AI_FEATURES | tojson }},
+            segments: [],
+                // Firebase config for Firestore sync
+                firebase: {
+        apiKey: "{{ firebase_api_key }}",
+            authDomain: "{{ firebase_auth_domain }}",
+                projectId: "{{ firebase_project_id }}",
+                    storageBucket: "{{ firebase_storage_bucket }}",
+                        messagingSenderId: "{{ firebase_messaging_sender_id }}",
+                            appId: "{{ firebase_app_id }}"
+    },
+    // Toggle between Socket.IO and Firestore
+    useFirestore: true
     };
     {% for para in structure %}
     {% for seg in para.segments %}
@@ -235,10 +329,17 @@
     {% endfor %}
 
     document.addEventListener('DOMContentLoaded', () => {
-        initSocket(window.GLOSSIO_CONFIG.projectId);
+        if (window.GLOSSIO_CONFIG.useFirestore && window.initFirestoreSync) {
+            // Use Firestore for real-time sync
+            window.initFirestoreSync(window.GLOSSIO_CONFIG);
+        } else {
+            // Fallback to Socket.IO
+            initSocket(window.GLOSSIO_CONFIG.projectId);
+        }
     });
 </script>
 <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/firestore-editor-bridge.js') }}"></script>
 
 <!-- Search Modal -->
 <div class="modal fade" id="searchModal" tabindex="-1">
@@ -258,6 +359,25 @@
                     <button class="btn btn-primary" onclick="performSearch()">Search</button>
                 </div>
                 <div id="search-results" class="list-group" style="max-height: 300px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title" id="confirmModalTitle">Confirm Action</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <p id="confirmModalMessage" class="mb-0"></p>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="confirmModalBtn">Confirm</button>
             </div>
         </div>
     </div>

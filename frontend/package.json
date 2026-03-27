@@ -1,0 +1,61 @@
+{
+    "name": "glossio-desktop",
+    "version": "2.0.2",
+    "description": "Glossio Translation Assistant - Desktop App",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-builder",
+        "build:win": "electron-builder --win",
+        "build:mac": "electron-builder --mac",
+        "build:linux": "electron-builder --linux",
+        "release": "electron-builder --publish always"
+    },
+    "author": "GloSoft",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.9.1",
+        "firebase-tools": "^13.0.0"
+    },
+    "dependencies": {
+        "electron-store": "^8.1.0",
+        "electron-updater": "^6.6.2"
+    },
+    "build": {
+        "appId": "com.glossio.desktop",
+        "productName": "Glossio",
+        "directories": {
+            "output": "../build"
+        },
+        "files": [
+            "**/*",
+            "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+            "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+            "!node_modules/.bin"
+        ],
+        "extraResources": [
+            {
+                "from": "../build/dist/glossio-backend",
+                "to": "backend/glossio-backend"
+            }
+        ],
+        "publish": {
+            "provider": "github",
+            "owner": "dadleg",
+            "repo": "glossio-desktop"
+        },
+        "win": {
+            "target": "nsis",
+            "icon": "icons/icon.ico"
+        },
+        "mac": {
+            "target": "dmg",
+            "icon": "icons/icon.icns"
+        },
+        "linux": {
+            "target": "AppImage",
+            "icon": "icons/icon.png"
+        }
+    }
+}

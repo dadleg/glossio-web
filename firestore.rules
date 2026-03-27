@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(projectId) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/projects/$(projectId)).data.owner_id == request.auth.uid;
+    }
+    
+    function isCollaborator(projectId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/projects/$(projectId)/collaborators/$(request.auth.uid));
+    }
+    
+    function isOwnerOrCollaborator(projectId) {
+      return isOwner(projectId) || isCollaborator(projectId);
+    }
+    
+    // Projects collection
+    match /projects/{projectId} {
+      // Anyone authenticated can read their own projects
+      allow read: if isOwnerOrCollaborator(projectId);
+      
+      // Only authenticated users can create projects
+      allow create: if isAuthenticated() && request.resource.data.owner_id == request.auth.uid;
+      
+      // Only owner can update/delete project metadata
+      allow update, delete: if isOwner(projectId);
+      
+      // Segments subcollection
+      match /segments/{segmentId} {
+        // Read: owner or collaborator
+        allow read: if isOwnerOrCollaborator(projectId);
+        
+        // Write: owner or collaborator, but respect locking
+        allow create: if isOwnerOrCollaborator(projectId);
+        allow update: if isOwnerOrCollaborator(projectId) && 
+                        (resource.data.locked_by == null || 
+                         resource.data.locked_by == request.auth.uid);
+        allow delete: if isOwner(projectId);
+      }
+      
+      // Collaborators subcollection
+      match /collaborators/{userId} {
+        allow read: if isOwnerOrCollaborator(projectId);
+        allow write: if isOwner(projectId);
+      }
+      
+      // Presence subcollection
+      match /presence/{userId} {
+        allow read: if isOwnerOrCollaborator(projectId);
+        // Users can only update their own presence
+        allow write: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+  }
+}

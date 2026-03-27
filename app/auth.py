@@ -2,13 +2,28 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User
 from app.extensions import db
-from firebase_admin import auth as firebase_auth
-import firebase_admin
+import os
+
+# Firebase imports - conditional for LOCAL_MODE support
+FIREBASE_ENABLED = False
+if os.environ.get('LOCAL_MODE', '').lower() != 'true':
+    try:
+        from firebase_admin import auth as firebase_auth
+        import firebase_admin
+        FIREBASE_ENABLED = True
+    except ImportError:
+        print("firebase_admin not available - running in local-only mode")
+else:
+    print("LOCAL_MODE enabled - Firebase auth disabled")
 
 bp = Blueprint('auth', __name__)
 
 @bp.route('/firebase-login', methods=['POST'])
 def firebase_login():
+    # Reject if Firebase is not enabled (LOCAL_MODE)
+    if not FIREBASE_ENABLED:
+        return jsonify({'success': False, 'message': 'Firebase authentication is disabled in local mode. Use offline login.'}), 503
+    
     if current_user.is_authenticated:
         return jsonify({'success': True, 'redirect': url_for('main.index')})
 
@@ -65,13 +80,14 @@ def login():
             flash('Invalid email or password')
             
     return render_template('login.html',
-                           firebase_api_key=current_app.config['FIREBASE_API_KEY'],
-                           firebase_auth_domain=current_app.config['FIREBASE_AUTH_DOMAIN'],
-                           firebase_project_id=current_app.config['FIREBASE_PROJECT_ID'],
-                           firebase_storage_bucket=current_app.config['FIREBASE_STORAGE_BUCKET'],
-                           firebase_messaging_sender_id=current_app.config['FIREBASE_MESSAGING_SENDER_ID'],
-                           firebase_app_id=current_app.config['FIREBASE_APP_ID'],
-                           firebase_measurement_id=current_app.config['FIREBASE_MEASUREMENT_ID'])
+                           local_mode=not FIREBASE_ENABLED,
+                           firebase_api_key=current_app.config.get('FIREBASE_API_KEY', ''),
+                           firebase_auth_domain=current_app.config.get('FIREBASE_AUTH_DOMAIN', ''),
+                           firebase_project_id=current_app.config.get('FIREBASE_PROJECT_ID', ''),
+                           firebase_storage_bucket=current_app.config.get('FIREBASE_STORAGE_BUCKET', ''),
+                           firebase_messaging_sender_id=current_app.config.get('FIREBASE_MESSAGING_SENDER_ID', ''),
+                           firebase_app_id=current_app.config.get('FIREBASE_APP_ID', ''),
+                           firebase_measurement_id=current_app.config.get('FIREBASE_MEASUREMENT_ID', ''))
 
 # @bp.route('/register', methods=['GET', 'POST'])
 # def register():
@@ -94,6 +110,25 @@ def login():
 #             return redirect(url_for('auth.login'))
 #             
 #     return render_template('register.html')
+
+@bp.route('/offline')
+def offline_login():
+    """Login as guest/offline user for local-only mode."""
+    # Create or get the offline user
+    offline_email = 'offline@local.glossio'
+    user = User.query.filter_by(email=offline_email).first()
+    
+    if not user:
+        user = User(
+            email=offline_email, 
+            name='Offline User',
+            firebase_uid=None
+        )
+        db.session.add(user)
+        db.session.commit()
+    
+    login_user(user)
+    return redirect(url_for('main.index'))
 
 @bp.route('/logout')
 def logout():

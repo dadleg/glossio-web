@@ -98,3 +98,50 @@ class AuditLog(db.Model):
     
     user = db.relationship('User', backref='audit_logs')
     project = db.relationship('Project', backref='audit_logs')
+
+
+class AITranslationJob(db.Model):
+    """Tracks background translation jobs for entire documents"""
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, running, completed, failed, cancelled
+    total_segments = db.Column(db.Integer, default=0)
+    completed_segments = db.Column(db.Integer, default=0)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    avg_time_per_segment = db.Column(db.Float)  # seconds
+    error_message = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    project = db.relationship('Project', backref='ai_jobs')
+    user = db.relationship('User', backref='ai_jobs')
+    
+    @property
+    def progress_percent(self):
+        if self.total_segments == 0:
+            return 0
+        return int((self.completed_segments / self.total_segments) * 100)
+    
+    @property
+    def estimated_remaining_seconds(self):
+        if not self.avg_time_per_segment or self.completed_segments >= self.total_segments:
+            return 0
+        remaining = self.total_segments - self.completed_segments
+        return remaining * self.avg_time_per_segment
+
+
+class AISuggestion(db.Model):
+    """Stores AI-generated translation suggestions per segment"""
+    id = db.Column(db.Integer, primary_key=True)
+    segment_id = db.Column(db.Integer, db.ForeignKey('segment.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('ai_translation_job.id'))
+    suggested_text = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, accepted, rejected, edited
+    translation_time_ms = db.Column(db.Integer)  # For benchmarking
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime)
+    
+    segment = db.relationship('Segment', backref='ai_suggestions')
+    job = db.relationship('AITranslationJob', backref='suggestions')
+

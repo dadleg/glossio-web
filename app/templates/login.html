@@ -181,6 +181,20 @@
             <div class="login-card">
                 <div id="alert-container"></div>
 
+                {% if local_mode %}
+                <div class="text-center mb-3">
+                    <h5>Local Mode</h5>
+                    <p class="text-muted" style="font-size: 13px;">Running without cloud services. All data stored
+                        locally.</p>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="/auth/offline" class="btn btn-primary btn-lg"
+                        style="font-weight: 600; height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="hard-drive" style="width: 20px; margin-right: 10px;"></i>
+                        Continue Offline
+                    </a>
+                </div>
+                {% else %}
                 <!-- Tabs -->
                 <ul class="nav nav-tabs nav-fill mb-3" id="authTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -244,7 +258,21 @@
                     </button>
                 </div>
 
-                <div class="login-footer">
+                <div class="text-center my-3 text-muted" style="font-size: 12px;">OR</div>
+
+                <div class="d-grid gap-2">
+                    <a href="/auth/offline" class="btn btn-outline-dark btn-sm"
+                        style="font-weight: 600; height: 38px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="hard-drive" style="width: 16px; margin-right: 8px;"></i>
+                        Continue Offline (Local Only)
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="login-footer mt-3">
+                    <p class="text-muted" style="font-size: 11px;">
+                        <strong>Offline mode:</strong> Projects saved locally. Sign in to enable collaboration.
+                    </p>
                     <p>Having trouble? <a href="https://t.me/damiangfabio" target="_blank">Contact the Administrator</a>
                     </p>
                 </div>

@@ -195,3 +195,33 @@ def on_heartbeat(data):
                 s.locked_at = None
                 emit('segment_unlocked', {'segment_id': s.id}, room=f"project_{project_id}")
             db.session.commit()
+
+@socketio.on('segment_merged')
+def on_segment_merged(data):
+    """Broadcast segment merge to other users in the project."""
+    project_id = data['project_id']
+    room = f"project_{project_id}"
+    
+    # Broadcast to all users except sender
+    emit('segment_merged_broadcast', {
+        'deleted_segment_id': data['deleted_segment_id'],
+        'merged_segment_id': data['merged_segment_id']
+    }, room=room, include_self=False)
+    
+    # Log the broadcast
+    print(f"Broadcasted segment merge: {data['deleted_segment_id']} -> {data['merged_segment_id']}")
+
+@socketio.on('paragraph_merged')
+def on_paragraph_merged(data):
+    """Broadcast paragraph merge to other users in the project."""
+    project_id = data['project_id']
+    room = f"project_{project_id}"
+    
+    # Broadcast to all users except sender
+    emit('paragraph_merged_broadcast', {
+        'deleted_segment_ids': data['deleted_segment_ids'],
+        'merged_segment_id': data['merged_segment_id']
+    }, room=room, include_self=False)
+    
+    # Log the broadcast
+    print(f"Broadcasted paragraph merge: {len(data['deleted_segment_ids'])} segments -> {data['merged_segment_id']}")

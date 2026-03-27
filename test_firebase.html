@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Firebase Isolation Test - Network</title>
+</head>
+
+<body>
+    <h1>Firebase Isolation Test - Network Call</h1>
+    <div id="status">Initializing...</div>
+    <div id="network-status" style="margin-top: 10px; font-weight: bold;">Waiting for network check...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        import { getAuth, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+        // CONFIGURATION FROM .env
+        const firebaseConfig = {
+            apiKey: "AIzaSyAxd7JFdw_Zd66BugO73IgPO93RyHVRFWQ",
+            authDomain: "stone-booking-429504-b2.firebaseapp.com",
+            projectId: "stone-booking-429504-b2",
+            storageBucket: "stone-booking-429504-b2.firebasestorage.app",
+            messagingSenderId: "726343101765",
+            appId: "1:726343101765:web:bf207b5f0c5ca6fc60222c",
+            measurementId: "G-HFE84SPQ83"
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            document.getElementById('status').innerText = "Firebase Initialized. Starting Network Call...";
+
+            // Dummy network call to verify API Key acceptance
+            console.log("Attempting fetchSignInMethodsForEmail...");
+            fetchSignInMethodsForEmail(auth, "test@example.com")
+                .then((methods) => {
+                    document.getElementById('network-status').innerText = "SUCCESS: Network call worked! API Key is VALID for this origin.";
+                    document.getElementById('network-status').style.color = "green";
+                    console.log("Methods:", methods);
+                })
+                .catch((error) => {
+                    document.getElementById('network-status').innerText = "FAILURE: " + error.code + " - " + error.message;
+                    document.getElementById('network-status').style.color = "red";
+                    console.error("Network Error:", error);
+                });
+
+        } catch (e) {
+            document.getElementById('status').innerText = "Initialization Error: " + e.message;
+            console.error(e);
+        }
+    </script>
+</body>
+
+</html>

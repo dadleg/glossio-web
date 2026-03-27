@@ -3,5 +3,23 @@ __pycache__/
 *.db
 .env
 venv/
+.venv/
 uploads/
 serviceAccountKey.json
+
+# Node modules
+node_modules/
+
+# Build artifacts
+build/
+dist/
+release/
+*.AppImage
+
+# Data files
+translations.csv
+translation_export.csv
+
+# IDEs
+.idea/
+.vscode/
